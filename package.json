@@ -1,0 +1,19 @@
+{
+  "name": "runway",
+  "version": "1.0.0",
+  "description": "Typed decoders for your data",
+  "main": "index.ts",
+  "repository": "git@github.com:michaljanocko/runway.git",
+  "author": "Michal Janočko <michal@janocko.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "4",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "7",
+    "eslint-config-standard-with-typescript": "^20.0.0",
+    "eslint-plugin-import": "2",
+    "eslint-plugin-node": "11",
+    "eslint-plugin-promise": "4",
+    "typescript": "^4.2.4"
+  }
+}
