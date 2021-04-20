@@ -2,88 +2,105 @@ interface Decoder<D> {
   readonly decode: (data: unknown) => D
 }
 
-class DecoderError extends SyntaxError {
-  constructor (error: 'missing' | 'wrongType', data: unknown, type: string) {
-    if (error === 'missing') {
-      super(`Property of type ${type} is missing`)
-    } else {
-      super(`This is not ${type}: ${JSON.stringify(data, null, 2)}`)
-    }
+class DecoderError extends SyntaxError {}
+
+const show = (data: unknown): string => JSON.stringify(data, null, 2)
+
+const checkDefined = (data: unknown): data is null | undefined => {
+  if (data === null || data === undefined) {
+    throw new DecoderError('Data is missing')
   }
+
+  return false
 }
+
+const primitiveDecoder = <D>(
+  condition: (data: unknown) => data is D,
+  dataType: string
+): Decoder<D> => ({
+    decode: (data) => {
+      checkDefined(data)
+
+      if (!condition(data)) {
+        throw new DecoderError(`This is not a ${dataType}: ${show(data)}`)
+      }
+
+      return data
+    }
+  })
 
 export const unknown: Decoder<unknown> = {
   decode: (data) => data
 }
 
-const decoder = <D>(condition: (data: unknown) => data is D, parser: (data: D) => D, type: string): Decoder<D> => ({
+export const string = primitiveDecoder<string>(
+  ($): $ is string => typeof $ === 'string',
+  'string'
+)
+
+export const number = primitiveDecoder<number>(
+  ($): $ is number => typeof $ === 'number',
+  'number'
+)
+
+export const boolean = primitiveDecoder<boolean>(
+  ($): $ is boolean => typeof $ === 'boolean',
+  'boolean'
+)
+
+export const literal = (types: unknown[]): Decoder<unknown> => ({
   decode: (data) => {
-    if (data === null || data === undefined) {
-      throw new DecoderError('missing', data, type)
+    if (types.some($ => $ === data)) {
+      return data
     }
 
-    if (!condition(data)) {
-      throw new DecoderError('wrongType', data, type)
-    }
-
-    return parser(data)
+    throw new DecoderError(
+      `None of these [${types.map($ => JSON.stringify($)).join(' | ')}] match this: ${show(data)}`
+    )
   }
 })
 
-export const string = decoder<string>(
-  ($): $ is string => typeof $ === 'string',
-  ($) => $,
-  'a string'
-)
+export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => ({
+  decode: (data) => {
+    if (data === null) {
+      return null
+    }
 
-export const number = decoder<number>(
-  ($): $ is number => typeof $ === 'number',
-  ($) => $,
-  'a number'
-)
+    return decoder.decode(data)
+  }
+})
 
-export const boolean = decoder<boolean>(
-  ($): $ is boolean => typeof $ === 'boolean',
-  ($) => $,
-  'a boolean'
-)
+export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => ({
+  decode: (data) => {
+    checkDefined(data)
 
-// export const literal = (types: unknown[]): Decoder<unknown> => ({
-//   decode: (data) => {
-//     if (types.some($ => $ === data)) {
-//       return data
-//     } else {
-//       throw new DecoderError(data, `in [${types.map($ => JSON.stringify($)).join(' | ')}]`)
-//     }
-//   }
-// })
+    if (!Array.isArray(data)) {
+      throw new DecoderError(`This is not an array: ${show(data)}`)
+    }
 
-// export const nullable = <A>(decoder: Decoder<A>): Decoder<null | A> => ({
-//   decode: (data) => {
-//     if (data === null) {
-//       return null
-//     } else {
-//       return decoder.decode(data)
-//     }
-//   }
-// })
+    return data.map($ => decoder.decode($))
+  }
+})
 
-// export const array = <A>(decoder: Decoder<A>): Decoder<A[]> => ({
-//   decode: (data) => {
-//     if (Array.isArray(data)) {
-//       return data.map($ => decoder.decode($))
-//     } else {
-//       throw new DecoderError(data, 'an array')
-//     }
-//   }
-// })
+export const record = <D>(decoder: Decoder<D>): Decoder<Record<string, D>> => ({
+  decode: (data) => {
+    checkDefined(data)
 
-// export const record = <A>(decoder: Decoder<A>): Decoder<Record<string, A>> => ({
-//   decode: (data) => {
-//     if (typeof data === 'object') {
-//       return Object.entries(data).map([key, value] => )
-//     } else {
-//       throw new DecoderError(data, 'an object')
-//     }
-//   }
-// })
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      throw new DecoderError(`This is not an object: ${show(data)}`)
+    }
+
+    const keys = Object.keys(data)
+
+    if (keys.every(key => typeof key === 'string')) {
+      throw new DecoderError(`Not every key in here is a string: ${show(data)}`)
+    }
+
+    const parsed: Record<string, D> = {}
+    keys.forEach(key => {
+      parsed[key] = decoder.decode(data[key as keyof typeof data])
+    })
+
+    return parsed
+  }
+})
