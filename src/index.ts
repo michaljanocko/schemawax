@@ -51,3 +51,13 @@ export const literal = (types: unknown[]): Decoder<unknown> => ({
     }
   }
 })
+
+export const nullable = <A>(decoder: Decoder<A>): Decoder<null | A> => ({
+  decode: (data) => {
+    if (data === null) {
+      return null
+    } else {
+      return decoder.decode(data)
+    }
+  }
+})
