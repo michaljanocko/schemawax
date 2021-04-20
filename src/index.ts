@@ -61,3 +61,13 @@ export const nullable = <A>(decoder: Decoder<A>): Decoder<null | A> => ({
     }
   }
 })
+
+export const array = <A>(decoder: Decoder<A>): Decoder<A[]> => ({
+  decode: (data) => {
+    if (Array.isArray(data)) {
+      return data.map($ => decoder.decode($))
+    } else {
+      throw new DecoderError(data, 'an array')
+    }
+  }
+})
