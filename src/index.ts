@@ -3,8 +3,8 @@ interface Decoder<A> {
 }
 
 class DecoderError extends SyntaxError {
-  constructor (type: string, data: unknown) {
-    super(`This is not a ${type}: ${JSON.stringify(data, null, 2)}`)
+  constructor (data: unknown, type: string) {
+    super(`This is not ${type}: ${JSON.stringify(data, null, 2)}`)
   }
 }
 
@@ -17,7 +17,7 @@ export const string: Decoder<string> = {
     if (typeof data === 'string') {
       return data
     } else {
-      throw new DecoderError('string', data)
+      throw new DecoderError(data, 'a string')
     }
   }
 }
@@ -27,7 +27,7 @@ export const number: Decoder<number> = {
     if (typeof data === 'number') {
       return data
     } else {
-      throw new DecoderError('number', data)
+      throw new DecoderError(data, 'a number')
     }
   }
 }
@@ -37,7 +37,17 @@ export const boolean: Decoder<boolean> = {
     if (typeof data === 'boolean') {
       return data
     } else {
-      throw new DecoderError('boolean', data)
+      throw new DecoderError(data, 'a boolean')
     }
   }
 }
+
+export const literal = (types: unknown[]): Decoder<unknown> => ({
+  decode: (data) => {
+    if (types.some($ => $ === data)) {
+      return data
+    } else {
+      throw new DecoderError(data, `in [${types.map($ => JSON.stringify($)).join(' | ')}]`)
+    }
+  }
+})
