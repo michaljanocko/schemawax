@@ -73,7 +73,6 @@ export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => ({
 export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => ({
   decode: (data) => {
     checkDefined(data)
-
     if (!Array.isArray(data)) {
       throw new DecoderError(`This is not an array: ${show(data)}`)
     }
@@ -82,25 +81,65 @@ export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => ({
   }
 })
 
+// export const tuple = <D extends ReadonlyArray<Decoder<unknown>>>(
+//   tuple: { [K in keyof D]: Decoder<D[K]> }
+// ): Decoder<D> => ({
+//     decode: (data, strict: boolean = true) => {
+//       checkDefined(data)
+//       if (!Array.isArray(data)) {
+//         throw new DecoderError(`This is not an array: ${show(data)}`)
+//       }
+
+//       return data
+//     }
+//   })
+
+const checkDictType = (data: unknown): data is { [key: string]: any } => {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new DecoderError(`This is not an object: ${show(data)}`)
+  }
+
+  return true
+}
+
 export const record = <D>(decoder: Decoder<D>): Decoder<Record<string, D>> => ({
   decode: (data) => {
     checkDefined(data)
-
-    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-      throw new DecoderError(`This is not an object: ${show(data)}`)
-    }
-
-    const keys = Object.keys(data)
-
-    if (keys.every(key => typeof key === 'string')) {
-      throw new DecoderError(`Not every key in here is a string: ${show(data)}`)
-    }
+    checkDictType(data)
+    const dataObject = data as { [key: string]: D }
 
     const parsed: Record<string, D> = {}
-    keys.forEach(key => {
-      parsed[key] = decoder.decode(data[key as keyof typeof data])
-    })
+
+    let key: keyof typeof dataObject
+    for (key in dataObject) {
+      parsed[key] = decoder.decode(dataObject[key])
+    }
 
     return parsed
   }
 })
+
+export const object = <D>(
+  struct: { [K in keyof D]: Decoder<D[K]> }
+): Decoder<{ [K in keyof D]: D[K] }> => ({
+    decode: (data) => {
+      checkDefined(data)
+      checkDictType(data)
+      const dataObject = data as { [key: string]: D }
+
+      const parsed: { [K in keyof D]?: D[K] } = {}
+
+      let key: keyof typeof struct
+      for (key in struct) {
+        const dataField = dataObject?.[key as string]
+
+        if (dataField === undefined) {
+          throw new DecoderError(`Missing key: ${show(key)}`)
+        }
+
+        parsed[key] = struct[key].decode(dataField)
+      }
+
+      return parsed as { [K in keyof D]: D[K] }
+    }
+  })
