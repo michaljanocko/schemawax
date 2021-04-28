@@ -81,18 +81,23 @@ export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => ({
   }
 })
 
-// export const tuple = <D extends ReadonlyArray<Decoder<unknown>>>(
-//   tuple: { [K in keyof D]: Decoder<D[K]> }
-// ): Decoder<D> => ({
-//     decode: (data, strict: boolean = true) => {
-//       checkDefined(data)
-//       if (!Array.isArray(data)) {
-//         throw new DecoderError(`This is not an array: ${show(data)}`)
-//       }
+export const tuple = <A extends readonly unknown[]>(
+  tuple: { [K in keyof A]: Decoder<A[K]> }
+): Decoder<{ [K in keyof A]: A[K] }> => ({
+    decode: (data) => {
+      checkDefined(data)
+      if (!Array.isArray(data)) {
+        throw new DecoderError(`This is not a tuple: ${show(data)}`)
+      }
 
-//       return data
-//     }
-//   })
+      const parsed = []
+      for (let i = 0; i < tuple.length; i++) {
+        parsed.push(tuple[i].decode(data[i]))
+      }
+
+      return data as unknown as { [K in keyof A]: A[K] }
+    }
+  })
 
 const checkDictType = (data: unknown): data is { [key: string]: any } => {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
