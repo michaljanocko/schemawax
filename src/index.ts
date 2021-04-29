@@ -2,6 +2,12 @@ interface Decoder<D> {
   readonly decode: (data: unknown) => D
 }
 
+type ElementType < T extends ReadonlyArray < unknown > > = T extends ReadonlyArray<
+  infer ElementType
+>
+  ? ElementType
+  : never
+
 class DecoderError extends SyntaxError {}
 
 const show = (data: unknown): string => JSON.stringify(data, null, 2)
@@ -30,7 +36,7 @@ const primitiveDecoder = <D>(
   })
 
 export const unknown: Decoder<unknown> = {
-  decode: (data) => data
+  decode: (data: unknown) => data
 }
 
 export const string = primitiveDecoder<string>(
@@ -39,7 +45,7 @@ export const string = primitiveDecoder<string>(
 )
 
 export const number = primitiveDecoder<number>(
-  ($): $ is number => typeof $ === 'number',
+  ($): $ is number => typeof $ === 'number' && Number.isFinite($),
   'number'
 )
 
@@ -48,15 +54,19 @@ export const boolean = primitiveDecoder<boolean>(
   'boolean'
 )
 
-export const literal = (types: unknown[]): Decoder<unknown> => ({
-  decode: (data) => {
-    if (types.some($ => $ === data)) {
-      return data
+export const literal = <T extends ReadonlyArray<infer Elem> ? Elem : never>(types: T): Decoder< = T extends ReadonlyArray<
+infer ElementType
+>
+? ElementType
+: never> => ({
+  decode: (data: unknown) => {
+    if (!types.some($ => $ === data)) {
+      throw new DecoderError(
+        `None of these [${types.map($ => JSON.stringify($)).join(' | ')}] match this: ${show(data)}`
+      )
     }
 
-    throw new DecoderError(
-      `None of these [${types.map($ => JSON.stringify($)).join(' | ')}] match this: ${show(data)}`
-    )
+    return data
   }
 })
 
@@ -81,21 +91,46 @@ export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => ({
   }
 })
 
-export const tuple = <A extends readonly unknown[]>(
-  tuple: { [K in keyof A]: Decoder<A[K]> }
-): Decoder<{ [K in keyof A]: A[K] }> => ({
-    decode: (data) => {
+export const pair = <D, E>(
+  pair: [Decoder<D>, Decoder<E>],
+  strict: boolean = false
+): Decoder<[D, E]> => ({
+    decode: (data: unknown) => {
       checkDefined(data)
       if (!Array.isArray(data)) {
         throw new DecoderError(`This is not a tuple: ${show(data)}`)
+      } else if (strict && data.length !== 2) {
+        throw new DecoderError(`This is not an array of two: ${show(data)}`)
+      } else if (data.length < 2) {
+        throw new DecoderError(`Not enough elements for a pair: ${show(data)}`)
       }
 
-      const parsed = []
-      for (let i = 0; i < tuple.length; i++) {
-        parsed.push(tuple[i].decode(data[i]))
+      return [
+        pair[0].decode(data[0]),
+        pair[1].decode(data[1])
+      ]
+    }
+  })
+
+export const triplet = <D, E, F>(
+  pair: [Decoder<D>, Decoder<E>, Decoder<F>],
+  strict: boolean = false
+): Decoder<[D, E, F]> => ({
+    decode: (data: unknown) => {
+      checkDefined(data)
+      if (!Array.isArray(data)) {
+        throw new DecoderError(`This is not a tuple: ${show(data)}`)
+      } else if (strict && data.length !== 3) {
+        throw new DecoderError(`This is not an array of three: ${show(data)}`)
+      } else if (data.length < 3) {
+        throw new DecoderError(`Not enough elements for a triplet: ${show(data)}`)
       }
 
-      return data as unknown as { [K in keyof A]: A[K] }
+      return [
+        pair[0].decode(data[0]),
+        pair[1].decode(data[1]),
+        pair[2].decode(data[2])
+      ]
     }
   })
 
@@ -122,6 +157,10 @@ export const record = <D>(decoder: Decoder<D>): Decoder<Record<string, D>> => ({
 
     return parsed
   }
+})
+
+export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]>> => ({
+  decode: (data) => Object.entries(record(decoder).decode(data))
 })
 
 export const object = <D>(
