@@ -2,149 +2,119 @@ interface Decoder<D> {
   readonly decode: (data: unknown) => D
 }
 
-type ElementType<A extends readonly any[]> = A extends ReadonlyArray<infer T> ? T : never
-
 class DecoderError extends SyntaxError {}
 
 const show = (data: unknown): string => JSON.stringify(data, null, 2)
 
 const checkDefined = (data: unknown): data is null | undefined => {
-  if (data === null || data === undefined) {
-    throw new DecoderError('Data is missing')
-  }
-
+  if (data == null) throw new DecoderError('This value is not there.')
   return false
 }
 
 const primitiveDecoder = <D>(
-  condition: (data: unknown) => data is D,
-  dataType: string
+  dataType: string,
+  condition: (data: unknown) => data is D
 ): Decoder<D> => ({
     decode: (data) => {
       checkDefined(data)
-
       if (!condition(data)) {
-        throw new DecoderError(`This is not a ${dataType}: ${show(data)}`)
+        throw new DecoderError(`This is not ${dataType}: ${show(data)}`)
       }
-
       return data
     }
   })
 
-export const unknown: Decoder<unknown> = {
-  decode: (data: unknown) => data
-}
+//
+// Primitives
+//
 
 export const string = primitiveDecoder<string>(
-  ($): $ is string => typeof $ === 'string', 'string'
+  'a string', ($): $ is string => typeof $ === 'string'
 )
 
 export const number = primitiveDecoder<number>(
-  ($): $ is number => typeof $ === 'number' && Number.isFinite($), 'number'
+  'a number', ($): $ is number => typeof $ === 'number' && Number.isFinite($)
 )
 
 export const boolean = primitiveDecoder<boolean>(
-  ($): $ is boolean => typeof $ === 'boolean', 'boolean'
+  'a boolean', ($): $ is boolean => typeof $ === 'boolean'
 )
 
-export const literal = <T extends readonly any[]>(types: T): Decoder<ElementType<T>> => ({
-  decode: (data: unknown) => {
-    if (!types.some($ => $ === data)) {
-      throw new DecoderError(
-        `None of these [${types.map($ => JSON.stringify($)).join(' | ')}] match this: ${show(data)}`
-      )
+export const oneOf = <D extends any[]>(
+  decoders: { [K in keyof D]: Decoder<D[K]> }
+): Decoder<{ [K in keyof D]: D[K] }[0]> => ({
+    decode: (data) => {
+      const errors = []
+      for (const decoder of decoders) {
+        try {
+          return decoder.decode(data)
+        } catch (e) { errors.push(e) }
+      }
+
+      throw new DecoderError(`Could not match any of the decoders, not matched: ${show(errors)}`)
     }
+  })
 
-    return data as ElementType<T>
-  }
-})
-
+/**
+ * If the data is null return null
+ * else, pass to the decoder where 'checkDefined'
+ * fails only when data is undefined
+ */
 export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => ({
-  decode: (data) => {
-    if (data === null) {
-      return null
-    }
-
-    return decoder.decode(data)
-  }
+  decode: (data) => data === null ? null : decoder.decode(data)
 })
+
+//
+// Arrays
+//
+
+function checkArrayType (data: unknown): asserts data is any[] {
+  if (!Array.isArray(data)) throw new DecoderError(`This is not an array: ${show(data)}`)
+}
 
 export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => ({
   decode: (data) => {
-    checkDefined(data)
-    if (!Array.isArray(data)) {
-      throw new DecoderError(`This is not an array: ${show(data)}`)
-    }
-
-    return data.map($ => decoder.decode($))
+    checkArrayType(data)
+    return data.map(decoder.decode)
   }
 })
 
-export const pair = <D, E>(
-  pair: [Decoder<D>, Decoder<E>],
-  strict: boolean = false
-): Decoder<[D, E]> => ({
-    decode: (data: unknown) => {
-      checkDefined(data)
-      if (!Array.isArray(data)) {
-        throw new DecoderError(`This is not a tuple: ${show(data)}`)
-      } else if (strict && data.length !== 2) {
-        throw new DecoderError(`This is not an array of two: ${show(data)}`)
-      } else if (data.length < 2) {
-        throw new DecoderError(`Not enough elements for a pair: ${show(data)}`)
+export const tuple = <D extends readonly unknown[]>(
+  ...decoders: { [K in keyof D]: Decoder<D[K]> }
+): Decoder<D> => ({
+    decode: (data) => {
+      checkArrayType(data)
+
+      if (decoders.length > data.length) {
+        throw new DecoderError(
+          `Tuple missing elements. ${decoders.length} > ${data.length}`
+        )
       }
 
-      return [
-        pair[0].decode(data[0]),
-        pair[1].decode(data[1])
-      ]
+      return decoders.map((decoder, index) => decoder.decode(data[index])) as any as D
     }
   })
 
-export const triplet = <D, E, F>(
-  pair: [Decoder<D>, Decoder<E>, Decoder<F>],
-  strict: boolean = false
-): Decoder<[D, E, F]> => ({
-    decode: (data: unknown) => {
-      checkDefined(data)
-      if (!Array.isArray(data)) {
-        throw new DecoderError(`This is not a tuple: ${show(data)}`)
-      } else if (strict && data.length !== 3) {
-        throw new DecoderError(`This is not an array of three: ${show(data)}`)
-      } else if (data.length < 3) {
-        throw new DecoderError(`Not enough elements for a triplet: ${show(data)}`)
-      }
+//
+// Dicts
+//
 
-      return [
-        pair[0].decode(data[0]),
-        pair[1].decode(data[1]),
-        pair[2].decode(data[2])
-      ]
-    }
-  })
-
-const checkDictType = (data: unknown): data is { [key: string]: any } => {
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+function checkDictType (data: unknown): asserts data is Record<string, unknown> {
+  if (typeof data !== 'object' || data === null) {
     throw new DecoderError(`This is not an object: ${show(data)}`)
+  } else if (Object.keys(data).some($ => typeof $ !== 'string')) {
+    throw new DecoderError(`Not all keys in this object are strings: ${show(data)}`)
   }
-
-  return true
 }
 
 export const record = <D>(decoder: Decoder<D>): Decoder<Record<string, D>> => ({
   decode: (data) => {
     checkDefined(data)
     checkDictType(data)
-    const dataObject = data as { [key: string]: D }
 
-    const parsed: Record<string, D> = {}
-
-    let key: keyof typeof dataObject
-    for (key in dataObject) {
-      parsed[key] = decoder.decode(dataObject[key])
-    }
-
-    return parsed
+    return Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [key, decoder.decode(value)])
+    )
   }
 })
 
@@ -152,27 +122,56 @@ export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]
   decode: (data) => Object.entries(record(decoder).decode(data))
 })
 
-export const object = <D>(
+//
+// Objects
+//
+
+const required = <D>(
   struct: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<{ [K in keyof D]: D[K] }> => ({
     decode: (data) => {
       checkDefined(data)
       checkDictType(data)
-      const dataObject = data as { [key: string]: D }
 
       const parsed: { [K in keyof D]?: D[K] } = {}
 
       let key: keyof typeof struct
       for (key in struct) {
-        const dataField = dataObject?.[key as string]
-
-        if (dataField === undefined) {
-          throw new DecoderError(`Missing key: ${show(key)}`)
-        }
-
-        parsed[key] = struct[key].decode(dataField)
+        parsed[key] = struct[key].decode(data[key as string])
       }
 
       return parsed as { [K in keyof D]: D[K] }
     }
+  })
+
+const partial = <D>(
+  struct: { [K in keyof D]: Decoder<D[K]> }
+): Decoder<Partial<{ [K in keyof D]: D[K] }>> => ({
+    decode: (data) => {
+      checkDefined(data)
+      checkDictType(data)
+
+      const parsed: { [K in keyof D]?: D[K] } = {}
+
+      let key: keyof typeof struct
+      for (key in struct) {
+        if (data[key as string] !== undefined) {
+          parsed[key] = struct[key].decode(data[key as string])
+        }
+      }
+
+      return parsed as Partial<{ [K in keyof D]: D[K] }>
+    }
+  })
+
+export const object = <D, E>(
+  struct: {
+    required?: { [K in keyof D]: Decoder<D[K]> }
+    optional?: { [L in keyof E]: Decoder<E[L]> }
+  }
+): Decoder<{ [K in keyof D]: D[K] } & Partial<{ [L in keyof E]: E[L] }>> => ({
+    decode: (data) => ({
+      ...required((struct.required ?? {}) as { [K in keyof D]: Decoder<D[K]> }).decode(data),
+      ...partial((struct.optional ?? {}) as { [L in keyof E]: Decoder<E[L]> }).decode(data)
+    })
   })
