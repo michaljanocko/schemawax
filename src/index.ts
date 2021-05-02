@@ -2,11 +2,7 @@ interface Decoder<D> {
   readonly decode: (data: unknown) => D
 }
 
-type ElementType < T extends ReadonlyArray < unknown > > = T extends ReadonlyArray<
-  infer ElementType
->
-  ? ElementType
-  : never
+type ElementType<A extends readonly any[]> = A extends ReadonlyArray<infer T> ? T : never
 
 class DecoderError extends SyntaxError {}
 
@@ -40,25 +36,18 @@ export const unknown: Decoder<unknown> = {
 }
 
 export const string = primitiveDecoder<string>(
-  ($): $ is string => typeof $ === 'string',
-  'string'
+  ($): $ is string => typeof $ === 'string', 'string'
 )
 
 export const number = primitiveDecoder<number>(
-  ($): $ is number => typeof $ === 'number' && Number.isFinite($),
-  'number'
+  ($): $ is number => typeof $ === 'number' && Number.isFinite($), 'number'
 )
 
 export const boolean = primitiveDecoder<boolean>(
-  ($): $ is boolean => typeof $ === 'boolean',
-  'boolean'
+  ($): $ is boolean => typeof $ === 'boolean', 'boolean'
 )
 
-export const literal = <T extends ReadonlyArray<infer Elem> ? Elem : never>(types: T): Decoder< = T extends ReadonlyArray<
-infer ElementType
->
-? ElementType
-: never> => ({
+export const literal = <T extends readonly any[]>(types: T): Decoder<ElementType<T>> => ({
   decode: (data: unknown) => {
     if (!types.some($ => $ === data)) {
       throw new DecoderError(
@@ -66,7 +55,7 @@ infer ElementType
       )
     }
 
-    return data
+    return data as ElementType<T>
   }
 })
 
