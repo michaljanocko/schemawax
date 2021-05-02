@@ -10,7 +10,7 @@ export interface Decoder<D> {
 
 export type Output<T extends Decoder<any>> = ReturnType<T['decode']>
 
-const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
+export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
   ...decoder,
   is: (data): data is D => {
     try {
