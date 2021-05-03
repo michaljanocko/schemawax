@@ -95,10 +95,12 @@ export const oneOf = <D extends readonly any[]>(
       for (const decoder of decoders) {
         try {
           return decoder.decode(data)
-        } catch (e) { errors.push(e) }
+        } catch (e) {
+          errors.push(Object.prototype.hasOwnProperty.call(e, 'message') ? e.message : 'Unknown error')
+        }
       }
 
-      throw new DecoderError(`Could not match any of the decoders, not matched: ${show(errors)}`)
+      throw new DecoderError(`Could not match any of the decoders, not matched: \n${show(errors)}`)
     }
   })
 
@@ -174,6 +176,7 @@ const required = <D>(
 
       let key: keyof typeof struct
       for (key in struct) {
+        if (data[key as string] === undefined) throw new DecoderError(`Object missing required property '${key as string}'`)
         parsed[key] = struct[key].decode(data[key as string])
       }
 
@@ -214,3 +217,11 @@ export const object = <D, E>(
       }
     }
   })
+
+export const literal = <D extends string>(literal: D): Decoder<D> => createDecoder({
+  decode: (data) => {
+    checkDefined(data)
+    if (data !== literal) throw new DecoderError(`Data does not match the literal. Expected: '${literal}', actual: '${show(data)}'`)
+    return data as D
+  }
+})
