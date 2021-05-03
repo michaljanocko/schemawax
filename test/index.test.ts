@@ -62,6 +62,30 @@ test('D.nullable fails when given undefined', () => {
   shouldFail(D.nullable(D.string), undefined)
 })
 
+// Literal
+test('D.literal succeeds when given the correct type', () => {
+  shouldBe(D.literal('test'), 'test', 'test')
+  shouldBe(D.literal(5), 5, 5)
+  shouldBe(D.literal(true), true, true)
+})
+test('D.literal fails when given a different value', () => {
+  shouldFail(D.literal('test'), '')
+  shouldFail(D.literal('test'), 'bar')
+  shouldFail(D.literal(5), '')
+  shouldFail(D.literal(5), 3)
+  shouldFail(D.literal(true), false)
+  shouldFail(D.literal(true), '')
+  shouldFail(D.literal(true), 7)
+})
+test('D.literal fails when given a wrong type', () => {
+  shouldFail(D.literal('test'), [])
+  shouldFail(D.literal('test'), {})
+})
+test('D.literal fails when given null or undefined', () => {
+  shouldFail(D.literal('test'), null)
+  shouldFail(D.literal('test'), undefined)
+})
+
 // One of
 test('D.oneOf succeeds when given one of the permitted types', () => {
   shouldBe(D.oneOf(D.number, D.string), 'test', 'test')
@@ -90,6 +114,10 @@ test('D.array fails when given something that is not an array', () => {
   shouldFail(D.array(D.unknown), {})
   shouldFail(D.array(D.unknown), 5)
   shouldFail(D.array(D.unknown), 'test')
+})
+test('D.array fails when given null or undefined', () => {
+  shouldFail(D.array(D.unknown), undefined)
+  shouldFail(D.array(D.unknown), null)
 })
 
 // Tuple
@@ -136,6 +164,10 @@ test('D.keyValuePairs fails when it gets an invalid record', () => {
   shouldFail(D.keyValuePairs(D.unknown), 'test')
   shouldFail(D.keyValuePairs(D.unknown), 5)
 })
+test('D.keyValuePairs fails when given null or undefined', () => {
+  shouldFail(D.keyValuePairs(D.unknown), null)
+  shouldFail(D.keyValuePairs(D.unknown), undefined)
+})
 
 // Object
 test('D.object succeeds when it has all required fields', () => {
@@ -146,6 +178,10 @@ test('D.object succeeds and crops when given some of the optional fields', () =>
 })
 test('D.object succeeds and crops when given some of the optional fields', () => {
   shouldBe(D.object({ required: { foo: D.string } }), { foo: 'test', bar: 5 }, { foo: 'test' })
+})
+test('D.object fails when given null or undefined', () => {
+  shouldFail(D.object({ optional: { foo: D.string } }), null)
+  shouldFail(D.object({ optional: { foo: D.string } }), undefined)
 })
 
 //
