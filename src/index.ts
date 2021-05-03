@@ -87,6 +87,18 @@ export const boolean = primitiveDecoder<boolean>(
   'a boolean', ($): $ is boolean => typeof $ === 'boolean'
 )
 
+export const literal = <D extends string | number | boolean>(literal: D): Decoder<D> => createDecoder({
+  decode: (data) => {
+    checkDefined(data)
+    if (data !== literal) {
+      throw new DecoderError(
+      `Data does not match the literal. Expected: '${literal as string}', actual: '${show(data)}'`
+      )
+    }
+    return data as D
+  }
+})
+
 export const oneOf = <D extends readonly any[]>(
   ...decoders: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<D[number]> => createDecoder({
@@ -217,11 +229,3 @@ export const object = <D, E>(
       }
     }
   })
-
-export const literal = <D extends string>(literal: D): Decoder<D> => createDecoder({
-  decode: (data) => {
-    string.decode(data)
-    if (data !== literal) throw new DecoderError(`Data does not match the literal. Expected: '${literal}', actual: '${data as string}'`)
-    return data as D
-  }
-})
