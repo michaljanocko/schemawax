@@ -221,7 +221,8 @@ export const object = <D, E>(
 export const literal = <D extends string>(literal: D): Decoder<D> => createDecoder({
   decode: (data) => {
     checkDefined(data)
-    if (data !== literal) throw new DecoderError(`Data does not match the literal. Expected: '${literal}', actual: '${show(data)}'`)
+    string.decode(data)
+    if (data !== literal) throw new DecoderError(`Data does not match the literal. Expected: '${literal}', actual: '${data as string}'`)
     return data as D
   }
 })
