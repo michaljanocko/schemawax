@@ -1,9 +1,9 @@
 import * as D from '../src/index'
 
 const shouldBe = <T>(decoder: D.Decoder<T>, input: unknown, output: T): void =>
-  expect(decoder.decode(input)).toStrictEqual(output)
+  expect(decoder.forceDecode(input)).toStrictEqual(output)
 const shouldFail = <T>(decoder: D.Decoder<T>, value: unknown): void =>
-  expect(() => decoder.decode(value)).toThrow(D.DecoderError)
+  expect(() => decoder.forceDecode(value)).toThrow(D.DecoderError)
 
 // Check defined
 test('checkDefined fails when given an undefined value', () => {
@@ -187,6 +187,16 @@ test('D.object fails when given null or undefined', () => {
 //
 // Methods
 //
+
+// maybe
+test('Decoder.decode returns the value when succeeds', () => {
+  expect(D.string.decode('test')).toStrictEqual('test')
+  expect(D.array(D.string).decode(['test'])).toStrictEqual(['test'])
+})
+test('Decoder.decode returns null when failed', () => {
+  expect(D.string.decode(5)).toStrictEqual(null)
+  expect(D.array(D.string).decode('test')).toStrictEqual(null)
+})
 
 // andThen
 test('Decoder.andThen changes the type after parsed', () => {

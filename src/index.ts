@@ -1,9 +1,10 @@
 interface Decode<D> {
-  readonly decode: (data: unknown) => D
+  readonly forceDecode: (data: unknown) => D
 }
 
 export interface Decoder<D> {
-  readonly decode: Decode<D>['decode']
+  readonly forceDecode: Decode<D>['forceDecode']
+  readonly decode: (data: unknown) => ReturnType<Decode<D>['forceDecode']> | null
   readonly is: (data: unknown) => data is D
   readonly andThen: <T>(transformer: (data: D) => T) => Decoder<T>
 }
@@ -12,9 +13,16 @@ export type Output<T extends Decoder<any>> = ReturnType<T['decode']>
 
 export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
   ...decoder,
+  decode: (data) => {
+    try {
+      return decoder.forceDecode(data)
+    } catch {
+      return null
+    }
+  },
   is: (data): data is D => {
     try {
-      decoder.decode(data)
+      decoder.forceDecode(data)
       return true
     } catch {
       return false
@@ -22,7 +30,7 @@ export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
   },
   andThen: (transformer) => {
     return createDecoder({
-      decode: (data: unknown) => transformer(decoder.decode(data))
+      forceDecode: (data: unknown) => transformer(decoder.forceDecode(data))
     })
   }
 })
@@ -51,14 +59,14 @@ export const checkDefined = (data: unknown): data is null | undefined => {
  * fails only when data is undefined
  */
 export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => createDecoder({
-  decode: (data) => data === null ? null : decoder.decode(data)
+  forceDecode: (data) => data === null ? null : decoder.forceDecode(data)
 })
 
 const primitiveDecoder = <D>(
   dataType: string,
   condition: (data: unknown) => data is D
 ): Decoder<D> => createDecoder({
-    decode: (data) => {
+    forceDecode: (data) => {
       checkDefined(data)
       if (!condition(data)) {
         throw new DecoderError(`This is not ${dataType}: ${show(data)}`)
@@ -72,7 +80,7 @@ const primitiveDecoder = <D>(
 //
 
 export const unknown = createDecoder({
-  decode: (data) => data
+  forceDecode: (data) => data
 })
 
 export const string = primitiveDecoder<string>(
@@ -88,7 +96,7 @@ export const boolean = primitiveDecoder<boolean>(
 )
 
 export const literal = <D extends string | number | boolean>(literal: D): Decoder<D> => createDecoder({
-  decode: (data) => {
+  forceDecode: (data) => {
     checkDefined(data)
     if (data !== literal) {
       throw new DecoderError(
@@ -102,11 +110,11 @@ export const literal = <D extends string | number | boolean>(literal: D): Decode
 export const oneOf = <D extends readonly any[]>(
   ...decoders: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<D[number]> => createDecoder({
-    decode: (data) => {
+    forceDecode: (data) => {
       const errors = []
       for (const decoder of decoders) {
         try {
-          return decoder.decode(data)
+          return decoder.forceDecode(data)
         } catch (e) {
           errors.push(Object.prototype.hasOwnProperty.call(e, 'message') ? e.message : 'Unknown error')
         }
@@ -125,17 +133,17 @@ function checkArrayType (data: unknown): asserts data is any[] {
 }
 
 export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => createDecoder({
-  decode: (data) => {
+  forceDecode: (data) => {
     checkDefined(data)
     checkArrayType(data)
-    return data.map(decoder.decode)
+    return data.map(decoder.forceDecode)
   }
 })
 
 export const tuple = <D extends readonly unknown[]>(
   ...decoders: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<D> => createDecoder({
-    decode: (data) => {
+    forceDecode: (data) => {
       checkDefined(data)
       checkArrayType(data)
       if (decoders.length > data.length) {
@@ -144,7 +152,9 @@ export const tuple = <D extends readonly unknown[]>(
         )
       }
 
-      return decoders.map((decoder, index) => decoder.decode(data[index])) as any as D
+      return decoders.map((decoder, index) =>
+        decoder.forceDecode(data[index])
+      ) as any as D
     }
   })
 
@@ -161,17 +171,17 @@ function checkDictType (data: unknown): asserts data is Record<string, unknown> 
 }
 
 export const record = <D>(decoder: Decoder<D>): Decoder<Record<string, D>> => createDecoder({
-  decode: (data) => {
+  forceDecode: (data) => {
     checkDefined(data)
     checkDictType(data)
     return Object.fromEntries(
-      Object.entries(data).map(([key, value]) => [key, decoder.decode(value)])
+      Object.entries(data).map(([key, value]) => [key, decoder.forceDecode(value)])
     )
   }
 })
 
 export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]>> => createDecoder({
-  decode: (data) => Object.entries(record(decoder).decode(data))
+  forceDecode: (data) => Object.entries(record(decoder).forceDecode(data))
 })
 
 //
@@ -181,7 +191,7 @@ export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]
 const required = <D>(
   struct: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<{ [K in keyof D]: D[K] }> => createDecoder({
-    decode: (data) => {
+    forceDecode: (data) => {
       checkDictType(data)
 
       const parsed: { [K in keyof D]?: D[K] } = {}
@@ -189,7 +199,7 @@ const required = <D>(
       let key: keyof typeof struct
       for (key in struct) {
         if (data[key as string] === undefined) throw new DecoderError(`Object missing required property '${key as string}'`)
-        parsed[key] = struct[key].decode(data[key as string])
+        parsed[key] = struct[key].forceDecode(data[key as string])
       }
 
       return parsed as { [K in keyof D]: D[K] }
@@ -199,7 +209,7 @@ const required = <D>(
 const partial = <D>(
   struct: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<Partial<{ [K in keyof D]: D[K] }>> => createDecoder({
-    decode: (data) => {
+    forceDecode: (data) => {
       checkDictType(data)
 
       const parsed: { [K in keyof D]?: D[K] } = {}
@@ -207,7 +217,7 @@ const partial = <D>(
       let key: keyof typeof struct
       for (key in struct) {
         if (data[key as string] !== undefined) {
-          parsed[key] = struct[key].decode(data[key as string])
+          parsed[key] = struct[key].forceDecode(data[key as string])
         }
       }
 
@@ -221,11 +231,11 @@ export const object = <D, E>(
     optional?: { [L in keyof E]: Decoder<E[L]> }
   }
 ): Decoder<{ [K in keyof D]: D[K] } & Partial<{ [L in keyof E]: E[L] }>> => createDecoder({
-    decode: (data) => {
+    forceDecode: (data) => {
       checkDefined(data)
       return {
-        ...required((struct.required ?? {}) as { [K in keyof D]: Decoder<D[K]> }).decode(data),
-        ...partial((struct.optional ?? {}) as { [L in keyof E]: Decoder<E[L]> }).decode(data)
+        ...required((struct.required ?? {}) as { [K in keyof D]: Decoder<D[K]> }).forceDecode(data),
+        ...partial((struct.optional ?? {}) as { [L in keyof E]: Decoder<E[L]> }).forceDecode(data)
       }
     }
   })
