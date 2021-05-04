@@ -189,11 +189,11 @@ test('D.object fails when given null or undefined', () => {
 //
 
 // maybe
-test('Decoder.decode returns the value when succeeds', () => {
+test('Decoder.decode returns the value when the decoder succeeds', () => {
   expect(D.string.decode('test')).toStrictEqual('test')
   expect(D.array(D.string).decode(['test'])).toStrictEqual(['test'])
 })
-test('Decoder.decode returns null when failed', () => {
+test('Decoder.decode returns null when the decoder fails', () => {
   expect(D.string.decode(5)).toStrictEqual(null)
   expect(D.array(D.string).decode('test')).toStrictEqual(null)
 })
