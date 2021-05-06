@@ -63,16 +63,16 @@ if (parsed) {
 
 ## 📄 Full documentation
 
-- Methods
+- [Methods](#methods)
   - [_Decoder_`.decode`](#decoderdecode)
   - [_Decoder_`.forceDecode`](#decoderforcedecode)
   - [_Decoder_`.is`](#decoderis)
-- Primitives
+- [Primitives](#primitives)
   - [`D.string`](#dstring)
   - [`D.number`](#dnumber)
-  - `D.boolean`
-  - `D.literal`
-- Combinators
+  - [`D.boolean`](#dboolean)
+  - [`D.literal`](#dliteral)
+- [Combinators](#combinators)
   - `D.oneOf`
   - `D.tuple`
   - `D.array`
@@ -166,4 +166,29 @@ D.number.decode('a string') // null
 D.boolean.decode(true) // true
 
 D.boolean.decode('not a boolean') // null
+```
+
+#### `D.literal`
+
+Literal decoder only decodes the exact same value (compared using `===`)
+
+```ts
+D.literal('data').decode('data') // 'data'
+D.literal('error').decode('error') // 'error'
+D.literal(0).decode(0) // 0
+
+D.literal('data').decode('error') // null
+D.literal(0).decode(1) // null
+// However, JS can sometimes be unpredictable
+D.literal([]).decode([]) // null because [] === [] gives false
+```
+
+### Combinators
+
+#### `D.oneOf`
+
+This decoder tries all the decoders passed to it in order and returns first that succeeds.
+
+```ts
+D.oneOf(D.string, D.number)
 ```
