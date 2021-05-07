@@ -186,10 +186,9 @@ const required = <D>(
 
       const parsed: Partial<D> = {}
 
-      let key: keyof typeof struct
-      for (key in struct) {
-        if (data[key as string] === undefined) throw new DecoderError(`Object missing required property '${key as string}'`)
-        parsed[key] = struct[key].decode(data[key as string])
+      for (const key in struct) {
+        if (data[key] === undefined) throw new DecoderError(`Object missing required property '${key}'`)
+        parsed[key] = struct[key].decode(data[key])
       }
 
       return parsed as D
@@ -204,10 +203,9 @@ const partial = <D>(
 
       const parsed: Partial<D> = {}
 
-      let key: keyof typeof struct
-      for (key in struct) {
-        if (data[key as string] !== undefined) {
-          parsed[key] = struct[key].decode(data[key as string])
+      for (const key in struct) {
+        if (data[key] !== undefined) {
+          parsed[key] = struct[key].decode(data[key])
         }
       }
 
