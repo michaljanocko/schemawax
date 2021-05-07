@@ -180,38 +180,36 @@ export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]
 
 const required = <D>(
   struct: { [K in keyof D]: Decoder<D[K]> }
-): Decoder<{ [K in keyof D]: D[K] }> => createDecoder({
+): Decoder<D> => createDecoder({
     decode: (data) => {
       checkDictType(data)
 
-      const parsed: { [K in keyof D]?: D[K] } = {}
+      const parsed: Partial<D> = {}
 
-      let key: keyof typeof struct
-      for (key in struct) {
-        if (data[key as string] === undefined) throw new DecoderError(`Object missing required property '${key as string}'`)
-        parsed[key] = struct[key].decode(data[key as string])
+      for (const key in struct) {
+        if (data[key] === undefined) throw new DecoderError(`Object missing required property '${key}'`)
+        parsed[key] = struct[key].decode(data[key])
       }
 
-      return parsed as { [K in keyof D]: D[K] }
+      return parsed as D
     }
   })
 
 const partial = <D>(
   struct: { [K in keyof D]: Decoder<D[K]> }
-): Decoder<Partial<{ [K in keyof D]: D[K] }>> => createDecoder({
+): Decoder<Partial<D>> => createDecoder({
     decode: (data) => {
       checkDictType(data)
 
-      const parsed: { [K in keyof D]?: D[K] } = {}
+      const parsed: Partial<D> = {}
 
-      let key: keyof typeof struct
-      for (key in struct) {
-        if (data[key as string] !== undefined) {
-          parsed[key] = struct[key].decode(data[key as string])
+      for (const key in struct) {
+        if (data[key] !== undefined) {
+          parsed[key] = struct[key].decode(data[key])
         }
       }
 
-      return parsed as Partial<{ [K in keyof D]: D[K] }>
+      return parsed
     }
   })
 
@@ -220,7 +218,7 @@ export const object = <D, E>(
     required?: { [K in keyof D]: Decoder<D[K]> }
     optional?: { [L in keyof E]: Decoder<E[L]> }
   }
-): Decoder<{ [K in keyof D]: D[K] } & Partial<{ [L in keyof E]: E[L] }>> => createDecoder({
+): Decoder<D & Partial<E>> => createDecoder({
     decode: (data) => {
       checkDefined(data)
       return {
