@@ -61,6 +61,8 @@ if (parsed) {
 }
 ```
 
+The decoders are fully typed so you can be confidently use your data in TypeScript.
+
 ## 📄 Full documentation
 
 - [Methods](#methods)
@@ -73,8 +75,8 @@ if (parsed) {
   - [`D.boolean`](#dboolean)
   - [`D.literal`](#dliteral)
 - [Combinators](#combinators)
-  - `D.oneOf`
-  - `D.tuple`
+  - [`D.oneOf`](#doneof)
+  - [`D.tuple`](#dtuple)
   - `D.array`
   - `D.record`
   - `D.keyValuePairs`
@@ -179,16 +181,40 @@ D.literal(0).decode(0) // 0
 
 D.literal('data').decode('error') // null
 D.literal(0).decode(1) // null
-// However, JS can sometimes be unpredictable
-D.literal([]).decode([]) // null because [] === [] gives false
 ```
 
 ### Combinators
 
 #### `D.oneOf`
 
-This decoder tries all the decoders passed to it in order and returns first that succeeds.
+This decoder tries all the decoders passed to it in order and returns the first one that succeeds.
 
 ```ts
-D.oneOf(D.string, D.number)
+const decoder = D.oneOf(D.string, D.number)
+
+decoder.decode('a string') // 'a string'
+decoder.decode(42) // 42
+
+decoder.decode(false) // null
+```
+
+#### `D.tuple`
+
+Using this you can comfortably decode TS tuples. (for example from JSON arrays)
+
+```ts
+const minMaxDecoder = D.tuple(D.number, D.number)
+
+const data = JSON.parse('{ "minmax": [18, 99] }')
+D.object({ // More on this below
+  required: {
+    minmax: minMaxDecoder
+  }
+}) // { minmax: [18, 99] }
+```
+
+`minmax` is now typed as `[number, number]` and not as `number[]`
+
+```ts
+const [firstName, lastName] = D.tuple(D.string, D.string).forceDecode(['Michael', 'Jackson'])
 ```
