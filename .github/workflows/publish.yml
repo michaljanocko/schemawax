@@ -1,0 +1,56 @@
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x, 15.x]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      - run: yarn install
+      - run: yarn test
+
+  publish-npm:
+    name: Publish to NPM
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          registry-url: https://registry.npmjs.org/
+      - run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-gpr:
+    name: Publish to GitHub Packages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14
+          registry-url: https://npm.pkg.github.com/
+      - run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
