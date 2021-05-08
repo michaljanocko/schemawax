@@ -37,7 +37,7 @@ type User = D.Output<typeof userDecoder>
 Get your data:
 
 ``` ts
-// Usually, you would probably do 'JSON.parse(response)' or something
+// Usually, you would get the data using 'JSON.parse(response)' or something
 const data = {
   name: 'Bob',
   preferredName: null,
@@ -57,7 +57,7 @@ if (parsed) {
 }
 ```
 
-The decoders are fully typed so you can be confidently use your data in TypeScript.
+The decoders are fully typed so you can confidently use your data in TypeScript.
 
 ## 📄 Full documentation
 
@@ -217,6 +217,8 @@ firstName === 'Michael' // true
 lastName === 'Jackson' // true
 ```
 
+Longer arrays get stripped at the end to fit the length of the tuple. Shorter arrays with not enough elements fail to decode.
+
 #### `D.array`
 
 The array decoder takes another decoder with which it tries to decode a whole JSON array.
@@ -229,9 +231,11 @@ D.array(D.number).decode([1, 2, 'not a number']) // null
 
 #### `D.record`
 
-This decoder works the same as the array except that it parses object and returns `Record<string, D>`.
+This decoder works the same as [`D.array`](#darray) except that it parses an object and returns `Record<string, D>`.
 
 ```ts
+const decoder = D.record(D.number)
+
 const data = {
   preschoolers: 55,
   student: 124,
@@ -239,13 +243,21 @@ const data = {
   unemployed: 128,
   retired: 67
 }
+decoder.decode(data) // succeeds with data as 'Record<string, number>'
 
-D.record(D.number).decode(data) // succeeds with data as 'Record<string, number>'
+const wrongData = {
+  preschoolers: null,
+  student: '124',
+  employed: 133,
+  unemployed: 128,
+  retired: 67
+}
+decoder.decode(wrongData) // fails because not all of the values are numbers
 ```
 
 #### `D.keyValuePairs`
 
-Key-value pairs decoder works the same was as [`D.record`](#drecord) but returns an array of tuples.
+The key-value pairs decoder works the same way as [`D.record`](#drecord) but returns an array of tuples.
 
 ```ts
 // e.g. with data from previous example
@@ -294,7 +306,7 @@ interface Person {
 
 ### _Decoder_`.andThen` & chaining
 
-If the built-in types in JSON aren't enough for you can extend the provided decoders. Let's say you want to decode a `Date` from an ISO string.
+If the built-in types in JSON aren't enough for you, you can extend the provided decoders. Let's say you want to decode a `Date` from an ISO string.
 
 ```ts
 const dateDecoder = D.string.andThen(date => new Date(date))
@@ -312,8 +324,10 @@ You can use this for:
 - Renaming fields in objects
 - Performing stricter checks (e.g. string length) and failing the decoder by throwing an error
 
+> Now you can decode anything you please—you're unstoppable!
+
 ## ♻️ Similar projects and differences
 
-- `io-ts` – Schemawax is much much smaller and doesn't require the gigantic `fp-ts` library
-- `ts-auto-guard` - Takes the opposite approach and creates decoders from interfaces but requires an extra compilation step and tooling. Hard to use in non-TS projects
-- `typescript-is` - Similar to `ts-auto-guard` but is a transformer for an unofficial version of the TypeScript compiler. Impossible to use without TS
+- [`io-ts`](https://github.com/gcanti/io-ts) – Schemawax is much much smaller and doesn't require the gigantic `fp-ts` library
+- [`ts-auto-guard`](https://github.com/rhys-vdw/ts-auto-guard) - Takes the opposite approach and creates decoders from interfaces but requires an extra compilation step and tooling. Hard to use in non-TS projects
+- [`typescript-is`](https://github.com/woutervh-/typescript-is) - Similar to `ts-auto-guard` but is a transformer for an unofficial version of the TypeScript compiler. Impossible to use without TS
