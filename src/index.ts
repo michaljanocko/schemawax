@@ -9,7 +9,7 @@ export interface Decoder<D> {
   readonly andThen: <T>(transformer: (data: D) => T) => Decoder<T>
 }
 
-export type Output<T extends Decoder<any>> = ReturnType<T['decode']>
+export type Output<T extends Decoder<any>> = ReturnType<T['forceDecode']>
 
 export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
   ...decoder,
@@ -100,7 +100,7 @@ export const literal = <D extends string | number | boolean>(literal: D): Decode
     checkDefined(data)
     if (data !== literal) {
       throw new DecoderError(
-      `Data does not match the literal. Expected: '${literal as string}', actual: '${show(data)}'`
+        `Data does not match the literal. Expected: '${literal as string}', actual: '${show(data)}'`
       )
     }
     return data as D
