@@ -36,9 +36,9 @@ Somewhere else:
 
 ```ts
 const decoder = response({ data: D.string, error: D.number })
-type Response = D.Output<typeof decoder> // Response<string, number>
+type DecodedResponse = D.Output<typeof decoder> // Response<string, number>
 
-const responseData: Response = { type: 'data', data: 'foo' } // succeeds
-const responseError: Response = { type: 'error', error: 5 } // succeeds
+const responseData: DecodedResponse = { type: 'data', data: 'foo' } // succeeds
+const responseError: DecodedResponse = { type: 'error', error: 5 } // succeeds
 const responseWrong = { type: 'error', data: 'foo' } // fails because it is of type error but has a data field
 ```
