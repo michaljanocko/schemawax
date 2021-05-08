@@ -124,6 +124,9 @@ export const oneOf = <D extends readonly any[]>(
     }
   })
 
+export const literalUnion = <D extends ReadonlyArray<string | number | boolean>>(...decoders: D): Decoder<D[number]> =>
+  oneOf(...decoders.map(literal))
+
 //
 // Arrays
 //
