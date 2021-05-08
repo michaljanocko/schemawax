@@ -94,11 +94,28 @@ test('D.oneOf succeeds when given one of the permitted types', () => {
   shouldBe(D.oneOf(D.number, D.nullable(D.string)), 'test', 'test')
   shouldBe(D.oneOf(D.number, D.nullable(D.string)), 5, 5)
 })
-
 test('D.oneOf fails when given a non-listed type', () => {
   shouldFail(D.oneOf(D.string), 5)
   shouldFail(D.oneOf(D.string, D.number), undefined)
   shouldFail(D.oneOf(D.string, D.number), null)
+})
+
+// Literal union
+test('D.literalUnion succeeds when given one of the specified literals', () => {
+  shouldBe(D.literalUnion('a', 5), 'a', 'a')
+  shouldBe(D.literalUnion('a', 5), 5, 5)
+})
+test('D.literalUnion fails when given a non-listed literal', () => {
+  shouldFail(D.literalUnion('a', 5), true)
+  shouldFail(D.literalUnion('a', 5), 'b')
+})
+test('D.literalUnion fails when given an unsupported type', () => {
+  shouldFail(D.literalUnion('a', 5), {})
+  shouldFail(D.literalUnion('a', 5), [])
+})
+test('D.literalUnion fails when given null or undefined', () => {
+  shouldFail(D.literalUnion('a', 5), null)
+  shouldFail(D.literalUnion('a', 5), undefined)
 })
 
 // Array

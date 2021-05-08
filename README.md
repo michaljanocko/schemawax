@@ -70,6 +70,7 @@ The decoders are fully typed so you can confidently use your data in TypeScript.
   - [`D.number`](#dnumber)
   - [`D.boolean`](#dboolean)
   - [`D.literal`](#dliteral)
+  - [`D.literalUnion`](#dliteralunion)
 - [Combinators](#combinators)
   - [`D.oneOf`](#doneof)
   - [`D.tuple`](#dtuple)
@@ -177,6 +178,19 @@ D.literal(0).decode(0) // 0
 
 D.literal('data').decode('error') // null
 D.literal(0).decode(1) // null
+```
+
+#### `D.literalUnion`
+
+`D.literalUnion` combines `D.literal` and `D.oneOf` the way you would expect.
+
+```ts
+const decoder = D.literalUnion('data', 'error') // D.Decoder<'data' | 'error'>
+
+decoder.decode('data') // 'data'
+decoder.decode('error') // 'error'
+
+decoder.decode('not in there') // null
 ```
 
 ### Combinators
