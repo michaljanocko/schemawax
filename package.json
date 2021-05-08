@@ -1,9 +1,9 @@
 {
-  "name": "parserwax",
+  "name": "schemawax",
   "version": "1.0.0",
-  "description": "Typed decoders for your data",
-  "homepage": "https://github.com/michaljanocko/parserwax",
-  "repository": "git@github.com:michaljanocko/parserwax.git",
+  "description": "Tiny typed data decoder",
+  "homepage": "https://github.com/michaljanocko/schemawax",
+  "repository": "git@github.com:michaljanocko/schemawax.git",
   "author": "Michal Janočko <michal@janocko.com>",
   "license": "MIT",
   "main": "dist/index.js",
