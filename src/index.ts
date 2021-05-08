@@ -226,17 +226,19 @@ const partial = <D>(
     }
   })
 
+type WithoutPartialUnknown<T> = T extends infer U & Partial<unknown> ? U : never
+
 export const object = <D, E>(
   struct: {
     required?: { [K in keyof D]: Decoder<D[K]> }
     optional?: { [L in keyof E]: Decoder<E[L]> }
   }
-): Decoder<D & Partial<E>> => createDecoder({
+): Decoder<WithoutPartialUnknown<D & Partial<E>>> => createDecoder({
     forceDecode: (data) => {
       checkDefined(data)
       return {
         ...required((struct.required ?? {}) as { [K in keyof D]: Decoder<D[K]> }).forceDecode(data),
         ...partial((struct.optional ?? {}) as { [L in keyof E]: Decoder<E[L]> }).forceDecode(data)
-      }
+      } as unknown as WithoutPartialUnknown<D & Partial<E>>
     }
   })
