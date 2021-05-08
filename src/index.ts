@@ -193,7 +193,7 @@ export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]
 
 type DecoderRecord = Record<PropertyKey, Decoder<any>>
 type WithoutPartialUnknown<T> = T extends infer U & Partial<unknown> ? U : never
-type ObjectType<D extends DecoderRecord> = D extends {[K in keyof infer U]: Decoder<(infer U)[K]>} ? U : never
+type ObjectType<D extends DecoderRecord> = D extends { [K in keyof infer U]: Decoder<(infer U)[K]> } ? U : never
 
 const required = <D extends DecoderRecord>(
   struct: D
