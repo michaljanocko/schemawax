@@ -11,10 +11,6 @@ npm install schemawax
 yarn add schemawax
 ```
 
-**Similar projects and differences:**
-
-- `io-ts` – Schemawax is much much smaller and doesn't require the humongous `fp-ts` library
-
 ## 📋 How to use
 
 I recommend checking out some examples to get an idea of what this library can do for you. _(spoiler: a lot)_
@@ -34,7 +30,7 @@ const userDecoder = D.object({
   }
 })
 
-// You can get the shape of the data into a type, use Output<…>
+// You can get the shape of the data into a type, use D.Output<…>
 type User = D.Output<typeof userDecoder>
 ```
 
@@ -77,11 +73,11 @@ The decoders are fully typed so you can be confidently use your data in TypeScri
 - [Combinators](#combinators)
   - [`D.oneOf`](#doneof)
   - [`D.tuple`](#dtuple)
-  - `D.array`
-  - `D.record`
-  - `D.keyValuePairs`
-  - `D.object`
-- _Decoder_`.andThen` & chaining
+  - [`D.array`](#darray)
+  - [`D.record`](#drecord)
+  - [`D.keyValuePairs`](#dkeyvaluepairs)
+  - [`D.object`](#dobject)
+- [_Decoder_`.andThen` & chaining](#decoderandthen--chaining)
 
 ### Methods
 
@@ -172,7 +168,7 @@ D.boolean.decode('not a boolean') // null
 
 #### `D.literal`
 
-Literal decoder only decodes the exact same value (compared using `===`)
+Literal decoder only decodes the exact same value (compared using `===`).
 
 ```ts
 D.literal('data').decode('data') // 'data'
@@ -217,4 +213,107 @@ D.object({ // More on this below
 
 ```ts
 const [firstName, lastName] = D.tuple(D.string, D.string).forceDecode(['Michael', 'Jackson'])
+firstName === 'Michael' // true
+lastName === 'Jackson' // true
 ```
+
+#### `D.array`
+
+The array decoder takes another decoder with which it tries to decode a whole JSON array.
+
+```ts
+D.array(D.number).decode([1, 2, 3]) // [1, 2, 3]
+
+D.array(D.number).decode([1, 2, 'not a number']) // null
+```
+
+#### `D.record`
+
+This decoder works the same as the array except that it parses object and returns `Record<string, D>`.
+
+```ts
+const data = {
+  preschoolers: 55,
+  student: 124,
+  employed: 133,
+  unemployed: 128,
+  retired: 67
+}
+
+D.record(D.number).decode(data) // succeeds with data as 'Record<string, number>'
+```
+
+#### `D.keyValuePairs`
+
+Key-value pairs decoder works the same was as [`D.record`](#drecord) but returns an array of tuples.
+
+```ts
+// e.g. with data from previous example
+D.keyValuePairs(D.number).decode(data) // succeeds with data as '[[string, number]]'
+```
+
+#### `D.object`
+
+This is probably the most important (and the most complicated?) decoder. You can decode whole typed objects like this:
+
+```ts
+const person = {
+  name: 'Sarah',
+  age: 25
+}
+
+const personDecoder = D.object({
+  required: {
+    name: D.string,
+    age: D.number
+  },
+  optional: {
+    preferredName: D.string
+  }
+})
+
+personDecoder.decode(person) // succeeds
+```
+
+You pass it an object which has `required` and `optional` object with specified fields. Both `required` and `optional` are optional so if you don't have any optional field you can just omit the `optional` field and vice versa.
+
+> Careful, `null` is not a missing value! Null is an actual value which is supposed to be handled with `D.nullable(…)`
+
+Again, if you want the type of `personDecoder`, you can use `D.Output<…>`
+
+```ts
+type Person = D.Output<typeof personDecoder>
+
+// The above is now equivalent to this interface
+interface Person {
+  name: string
+  age: number
+  preferredName?: string
+}
+```
+
+### _Decoder_`.andThen` & chaining
+
+If the built-in types in JSON aren't enough for you can extend the provided decoders. Let's say you want to decode a `Date` from an ISO string.
+
+```ts
+const dateDecoder = D.string.andThen(date => new Date(date))
+// You can now use it with
+// dateDecoder.decode(…)
+
+// Amazingly, TS is smart enough to allow for this:
+type DecodedDate = D.Output<typeof dateDecoder> // is actually Date! and not a string
+```
+
+> Also, if you throw an error from inside the function, the decoder fails as it would fail with a bad type or anything else!
+
+You can use this for:
+- Transforming to different types
+- Renaming fields in objects
+- Performing stricter checks (e.g. string length) and failing the decoder by throwing an error
+
+## ♻️ Similar projects and differences
+
+- `io-ts` – Schemawax is much much smaller and doesn't require the gigantic `fp-ts` library
+- `ts-auto-guard` - Takes the opposite approach and creates decoders from interfaces but requires an extra compilation step and tooling. Hard to use in non-TS projects
+- `typescript-is` - Similar to `ts-auto-guard` but is a transformer for an unofficial version of the TypeScript compiler. Impossible to use without TS
