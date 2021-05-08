@@ -192,7 +192,7 @@ export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]
 //
 
 type DecoderRecord = Record<PropertyKey, Decoder<any>>
-type WithoutPartialUnknown<T> = T extends infer U & Partial<unknown> ? U : never
+type OmitEmptyPartial<T extends DecoderRecord> = T extends infer U & Partial<{ [x: string]: any }> ? U : never
 type ObjectType<D extends DecoderRecord> = D extends { [K in keyof infer U]: Decoder<(infer U)[K]> } ? U : never
 
 const required = <D extends DecoderRecord>(
@@ -235,17 +235,17 @@ export const object = <D extends DecoderRecord, E extends DecoderRecord>(
     required?: D
     optional?: E
   }
-): Decoder<WithoutPartialUnknown<ObjectType<D> & Partial<ObjectType<E>>>> => createDecoder({
+): Decoder<OmitEmptyPartial<ObjectType<D> & Partial<ObjectType<E>>>> => createDecoder({
     forceDecode: (data) => {
       checkDefined(data)
 
-      const result: Partial<WithoutPartialUnknown<ObjectType<D> & Partial<ObjectType<E>>>> = {}
+      const result: Partial<OmitEmptyPartial<ObjectType<D> & Partial<ObjectType<E>>>> = {}
       if (struct.required !== undefined) {
         Object.assign(result, required(struct.required).forceDecode(data))
       }
       if (struct.optional !== undefined) {
         Object.assign(result, partial(struct.optional).forceDecode(data))
       }
-      return result as WithoutPartialUnknown<ObjectType<D> & Partial<ObjectType<E>>>
+      return result as OmitEmptyPartial<ObjectType<D> & Partial<ObjectType<E>>>
     }
   })
