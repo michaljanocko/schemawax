@@ -59,6 +59,8 @@ if (parsed) {
 
 The decoders are fully typed so you can confidently use your data in TypeScript.
 
+You can either delve into the documentation (highly recommended) or check out some of our quick [recipes](recipes/).
+
 ## 📄 Full documentation
 
 - [Methods](#methods)
@@ -339,6 +341,10 @@ You can use this for:
 - Performing stricter checks (e.g. string length) and failing the decoder by throwing an error
 
 > Now you can decode anything you please—you're unstoppable!
+
+## 🍲 Recipes
+
+**We recommend checking out some of our [examples](recipes/).**
 
 ## ♻️ Similar projects and differences
 
