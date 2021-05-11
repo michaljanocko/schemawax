@@ -80,7 +80,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [`D.record`](#drecord)
   - [`D.keyValuePairs`](#dkeyvaluepairs)
   - [`D.object`](#dobject)
-- [_Decoder_`.andThen` & chaining](#decoderandthen--chaining)
+- [_Decoder_`.map` & chaining](#decoderandthen--chaining)
 
 ### Methods
 
@@ -320,12 +320,12 @@ interface Person {
 }
 ```
 
-### _Decoder_`.andThen` & chaining
+### _Decoder_`.map` & chaining
 
 If the built-in types in JSON aren't enough for you, you can extend the provided decoders. Let's say you want to decode a `Date` from an ISO string.
 
 ```ts
-const dateDecoder = D.string.andThen(date => new Date(date))
+const dateDecoder = D.string.map(date => new Date(date))
 // You can now use it with
 // dateDecoder.decode(…)
 

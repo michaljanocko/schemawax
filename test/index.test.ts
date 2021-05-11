@@ -215,25 +215,25 @@ test('Decoder.decode returns null when the decoder fails', () => {
   expect(D.array(D.string).decode('test')).toStrictEqual(null)
 })
 
-// andThen
-test('Decoder.andThen changes the type after parsed', () => {
-  shouldBe(D.number.andThen($ => $.toString()), 5, '5')
+// map
+test('Decoder.map changes the type after parsed', () => {
+  shouldBe(D.number.map($ => $.toString()), 5, '5')
   const objectDecoder = D.object({
     required: { a: D.number },
     optional: { b: D.number }
-  }).andThen($ => ({
+  }).map($ => ({
     a: $.a.toString(),
     b: $.b?.toString()
   }))
   shouldBe(objectDecoder, { a: 5, b: 10 }, { a: '5', b: '10' })
   shouldBe(objectDecoder, { a: 5 }, { a: '5', b: undefined })
 })
-test('Decoder.andThen fails when the transformer fails', () => {
-  shouldFail(D.unknown.andThen(_ => { throw new D.DecoderError() }), '')
+test('Decoder.map fails when the transformer fails', () => {
+  shouldFail(D.unknown.map(_ => { throw new D.DecoderError() }), '')
 })
-test('Decoder.andThen fails when the decoder fails', () => {
-  shouldFail(D.number.andThen(Number.prototype.toString), 'test')
-  shouldFail(D.number.andThen($ => $.toString()), 'test')
+test('Decoder.map fails when the decoder fails', () => {
+  shouldFail(D.number.map(Number.prototype.toString), 'test')
+  shouldFail(D.number.map($ => $.toString()), 'test')
 })
 
 // is

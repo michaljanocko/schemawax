@@ -6,7 +6,7 @@ export interface Decoder<D> {
   readonly forceDecode: Decode<D>['forceDecode']
   readonly decode: (data: unknown) => ReturnType<Decode<D>['forceDecode']> | null
   readonly is: (data: unknown) => data is D
-  readonly andThen: <T>(transformer: (data: D) => T) => Decoder<T>
+  readonly map: <T>(transformer: (data: D) => T) => Decoder<T>
 }
 
 export type Output<T extends Decoder<any>> = ReturnType<T['forceDecode']>
@@ -28,7 +28,7 @@ export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
       return false
     }
   },
-  andThen: (transformer) => {
+  map: (transformer) => {
     return createDecoder({
       forceDecode: (data: unknown) => transformer(decoder.forceDecode(data))
     })
