@@ -2,8 +2,8 @@
   "compilerOptions": {
     /* Basic Options */
     // Target and module needed this way to be tree-shakable
-    "target": "es2018",
-    "module": "es2015",
+    "target": "es2015",
+    "module": "commonjs",
     "lib": [
       "es2020",
       "dom"
