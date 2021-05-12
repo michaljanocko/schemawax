@@ -7,7 +7,9 @@
   "author": "Michal Janočko <michal@janocko.com>",
   "license": "MIT",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
   "files": [
     "dist/**/*",
     "LICENSE",
