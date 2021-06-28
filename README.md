@@ -137,6 +137,31 @@ if (decoder.is(data)) {
 }
 ```
 
+#### _Decoder_`.validate`
+
+This method returns a discriminated union based on whether the decoder would fail or pass. It is useful to pattern match on the decoder result, getting the data or error without using a try catch clause. 
+
+```ts
+D.string.validate('somestringvalue') // {type: 'Ok', data: 'somestringvalue'}
+
+D.string.validate(42) // {type: 'Error', error: instance of DecoderError}
+
+// Using it in practice
+const decoder = D.array(D.boolean)
+const data = [true, false]
+const validationResult = decoder.validate(data)
+switch (validationResult.type) {
+  case 'Ok':
+    // TypeScript now knows that result has data which is an array of booleans
+    validationResult.data.map(console.log)
+    break;
+  case 'Error':
+    // TypeScript now knows that result has error so you can log the error message
+    console.log(validationResult.error.message)
+    break;
+}
+```
+
 ### Primitives
 
 All primitive decoders work the same
