@@ -11,8 +11,8 @@ export interface Decoder<D> {
 }
 
 export type DecodingResult<D> =
-  | { type: 'Ok'; data: D }
-  | { type: 'Error'; error: DecoderError }
+  | { type: 'Ok', data: D }
+  | { type: 'Error', error: DecoderError }
 
 export type Output<T extends Decoder<any>> = ReturnType<T['forceDecode']>
 
@@ -27,12 +27,12 @@ export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
   },
   validate: (data) => {
     try {
-      return { type: 'Ok', data: decoder.forceDecode(data) };
+      return { type: 'Ok', data: decoder.forceDecode(data) }
     } catch (e) {
       if (!(e instanceof DecoderError)) {
-        throw e;
+        throw e
       }
-      return { type: 'Error', error: e };
+      return { type: 'Error', error: e }
     }
   },
   is: (data): data is D => {
