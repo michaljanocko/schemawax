@@ -67,6 +67,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [_Decoder_`.decode`](#decoderdecode)
   - [_Decoder_`.forceDecode`](#decoderforcedecode)
   - [_Decoder_`.is`](#decoderis)
+  - [_Decoder_`.validate`](#decodervalidate)
 - [Primitives](#primitives)
   - [`D.string`](#dstring)
   - [`D.number`](#dnumber)
@@ -142,20 +143,20 @@ if (decoder.is(data)) {
 This method returns a discriminated union based on whether the decoder would fail or pass. It is useful to pattern match on the decoder result, getting the data or error without using a try catch clause. 
 
 ```ts
-D.string.validate('somestringvalue') // {type: 'Ok', data: 'somestringvalue'}
+D.string.validate('a string') // { type: 'ok', data: 'somestringvalue' }
 
-D.string.validate(42) // {type: 'Error', error: instance of DecoderError}
+D.string.validate(42) // { type: 'error', error: DecoderError }
 
 // Using it in practice
 const decoder = D.array(D.boolean)
 const data = [true, false]
 const validationResult = decoder.validate(data)
 switch (validationResult.type) {
-  case 'Ok':
+  case 'ok':
     // TypeScript now knows that result has data which is an array of booleans
     validationResult.data.map(console.log)
     break;
-  case 'Error':
+  case 'error':
     // TypeScript now knows that result has error so you can log the error message
     console.log(validationResult.error.message)
     break;
