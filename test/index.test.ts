@@ -248,3 +248,14 @@ test('Decoder.is returns false for wrong type', () => {
   expect(D.string.is(5)).toBe(false)
   expect(D.array(D.unknown).is({})).toBe(false)
 })
+
+// validate
+test('Decoder.validate on invalid data returns error', () => {
+  expect(D.string.validate(5).type).toBe('error')
+})
+test('Decoder.validate on invalid data returns error', () => {
+  expect(D.string.validate(5)).toHaveProperty('error')
+})
+test('Decoder.validate on valid data returns ok', () => {
+  expect(D.string.validate('hi')).toStrictEqual({ type: 'ok', data: 'hi' })
+})

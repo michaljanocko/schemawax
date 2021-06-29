@@ -5,9 +5,14 @@ interface Decode<D> {
 export interface Decoder<D> {
   readonly forceDecode: Decode<D>['forceDecode']
   readonly decode: (data: unknown) => ReturnType<Decode<D>['forceDecode']> | null
+  readonly validate: (data: unknown) => ValidationResult<D>
   readonly is: (data: unknown) => data is D
   readonly andThen: <T>(transformer: (data: D) => T) => Decoder<T>
 }
+
+export type ValidationResult<D> =
+  | { type: 'ok', data: D }
+  | { type: 'error', error: DecoderError }
 
 export type Output<T extends Decoder<any>> = ReturnType<T['forceDecode']>
 
@@ -18,6 +23,16 @@ export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
       return decoder.forceDecode(data)
     } catch {
       return null
+    }
+  },
+  validate: (data) => {
+    try {
+      return { type: 'ok', data: decoder.forceDecode(data) }
+    } catch (e) {
+      if (e instanceof DecoderError) {
+        return { type: 'error', error: e }
+      }
+      throw e
     }
   },
   is: (data): data is D => {
