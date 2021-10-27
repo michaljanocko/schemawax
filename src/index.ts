@@ -264,3 +264,11 @@ export const object = <D extends DecoderRecord, E extends DecoderRecord>(
       return result as OmitEmptyPartial<ObjectType<D> & Partial<ObjectType<E>>>
     }
   })
+
+export const recursive = <D>(decoder: Decoder<D>): Decoder<D | undefined> => createDecoder({
+  forceDecode: (data) => {
+    return unknown.andThen($ => {
+      return decoder.forceDecode(data)
+    }).forceDecode(data)
+  }
+})
