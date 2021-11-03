@@ -11,6 +11,8 @@ npm install schemawax
 yarn add schemawax
 ```
 
+> It is only **1.2 kB**!
+
 ## 📋 How to use
 
 I recommend checking out some examples to get an idea of what this library can do for you. _(spoiler: a lot)_
@@ -375,5 +377,10 @@ You can use this for:
 ## ♻️ Similar projects and differences
 
 - [`io-ts`](https://github.com/gcanti/io-ts) – Schemawax is much much smaller and doesn't require the gigantic `fp-ts` library
-- [`ts-auto-guard`](https://github.com/rhys-vdw/ts-auto-guard) - Takes the opposite approach and creates decoders from interfaces but requires an extra compilation step and tooling. Hard to use in non-TS projects
-- [`typescript-is`](https://github.com/woutervh-/typescript-is) - Similar to `ts-auto-guard` but is a transformer for an unofficial version of the TypeScript compiler. Impossible to use without TS
+- [`ts-auto-guard`](https://github.com/rhys-vdw/ts-auto-guard) – Takes the opposite approach and creates decoders from interfaces but requires an extra compilation step and tooling. Hard to use in non-TS projects
+- [`typescript-is`](https://github.com/woutervh-/typescript-is) – Similar to `ts-auto-guard` but is a transformer for an unofficial version of the TypeScript compiler. Impossible to use without TS
+- [`yup`](https://github.com/jquense/yup) – Very similar to Schemawax but has some predefined regexes and is **15× larger**! Anything `yup` can do should be possible with Schemawax
+- [`zod`](https://github.com/colinhacks/zod) – Again, very similar to Schemawax but better than yup. It is ~10 kB and it is more complex than Schemawax but offers more features (like recursive types).
+- [`ok-computer`](https://github.com/richardscarrott/ok-computer) – Very simple, only made out of pure functions (which is nice) but there is no type safety or inference
+
+**If you don't need recursive types, _Schemawax_ is the best choice and you won't regret choosing it.**
