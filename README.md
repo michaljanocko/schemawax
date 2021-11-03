@@ -83,7 +83,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [`D.record`](#drecord)
   - [`D.keyValuePairs`](#dkeyvaluepairs)
   - [`D.object`](#dobject)
-  - [`D.lazy`](#dlazy)
+  - [`D.recursive`](#drecursive)
 - [_Decoder_`.andThen` & chaining](#decoderandthen--chaining)
 
 ### Methods
@@ -306,7 +306,7 @@ The key-value pairs decoder works the same way as [`D.record`](#drecord) but ret
 
 ```ts
 // e.g. with data from previous example
-D.keyValuePairs(D.number).decode(data) // succeeds with data as '[[string, number]]'
+D.keyValuePairs(D.number).forceDecode(data) // succeeds with data as '[[string, number]]'
 ```
 
 #### `D.object`
@@ -329,7 +329,7 @@ const personDecoder = D.object({
   }
 })
 
-personDecoder.decode(person) // succeeds
+personDecoder.forceDecode(person) // succeeds
 ```
 
 You pass it an object which has `required` and `optional` object with specified fields. Both `required` and `optional` are optional so if you don't have any optional field you can just omit the `optional` field and vice versa.
@@ -349,7 +349,7 @@ interface Person {
 }
 ```
 
-#### `D.lazy`
+#### `D.recursive`
 
 This one allows you to decode recursive types. However, due to the limitations of TypeScript's type system, we can't have type inference and have to write interfaces to decode to manually.
 
@@ -359,11 +359,11 @@ This one allows you to decode recursive types. However, due to the limitations o
 type User = [string, string, User[]]
 
 // Then, we can create the decoder
-const userDecoder = D.tuple(D.string, D.string, D.array(D.lazy(() => userDecoder)))
+const userDecoder = D.tuple(D.string, D.string, D.array(D.recursive(() => userDecoder)))
 // This is equivalent
-const userDecoder = D.tuple(D.string, D.string, D.lazy(() => D.array(userDecoder)))
+const userDecoder = D.tuple(D.string, D.string, D.recursive(() => D.array(userDecoder)))
 // This too is equivalent
-const userDecoder = D.lazy(() => D.tuple(D.string, D.string, D.array(userDecoder)))
+const userDecoder = D.recursive(() => D.tuple(D.string, D.string, D.array(userDecoder)))
 
 // And the use it the way you're used to
 const bradPitt: User = [
@@ -381,7 +381,7 @@ const bradPitt: User = [
   ]
 ]
 
-userDecoder.forceDecode(bradPitt) // succeeds with type User
+userDecoder.forceDecode(bradPitt) // succeeds with the recursive type User
 ```
 
 ```ts
@@ -391,16 +391,16 @@ interface Category {
   subcategories: Category[]
 }
 
-// And then use lazy in the decoder
+// And then use `recursive` in the decoder
 const categoryDecoder: D.Decoder<Category> = D.object({
   required: {
     name: D.string,
-    subcategories: D.array(D.lazy(() => categoryDecoder))
+    subcategories: D.array(D.recursive(() => categoryDecoder))
   }
 })
 
 // This works as well
-const categoryDecoder: D.Decoder<Category> = D.lazy(() =>
+const categoryDecoder: D.Decoder<Category> = D.recursive(() =>
   D.object({
     required: {
       name: D.string,

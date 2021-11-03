@@ -265,7 +265,7 @@ export const object = <D extends DecoderRecord, E extends DecoderRecord>(
     }
   })
 
-export const lazy = <D>(decoder: () => Decoder<D>): Decoder<D> => createDecoder({
+export const recursive = <D>(decoder: () => Decoder<D>): Decoder<D> => createDecoder({
   forceDecode: (data) => {
     return decoder().forceDecode(data)
   }

@@ -201,13 +201,13 @@ test('D.object fails when given null or undefined', () => {
   shouldFail(D.object({ optional: { foo: D.string } }), undefined)
 })
 
-// Lazy (recursive)
-test('D.lazy succeeds when used correctly', () => {
+// Recursive
+test('D.recursive succeeds when used correctly', () => {
   // We need to specify the types beforehand
   type User = [string, string, User[]]
 
   const userDecoder: D.Decoder<User> =
-    D.tuple(D.string, D.string, D.array(D.lazy(() => userDecoder)))
+    D.tuple(D.string, D.string, D.array(D.recursive(() => userDecoder)))
 
   const users: User = [
     'Brad',
@@ -228,11 +228,11 @@ test('D.lazy succeeds when used correctly', () => {
   const categoryDecoder: D.Decoder<Category> = D.object({
     required: {
       name: D.string,
-      subcategories: D.array(D.lazy(() => categoryDecoder))
+      subcategories: D.array(D.recursive(() => categoryDecoder))
     }
   })
 
-  const categoryDecoder_: D.Decoder<Category> = D.lazy(() =>
+  const categoryDecoder_: D.Decoder<Category> = D.recursive(() =>
     D.object({
       required: {
         name: D.string,
