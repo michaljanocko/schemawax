@@ -130,8 +130,8 @@ export const oneOf = <D extends readonly any[]>(
       for (const decoder of decoders) {
         try {
           return decoder.forceDecode(data)
-        } catch (e) {
-          errors.push(Object.prototype.hasOwnProperty.call(e, 'message') ? e.message : 'Unknown error')
+        } catch (e: any) {
+          errors.push(e.message ?? 'Unknown error')
         }
       }
 
@@ -265,10 +265,8 @@ export const object = <D extends DecoderRecord, E extends DecoderRecord>(
     }
   })
 
-export const recursive = <D>(decoder: Decoder<D>): Decoder<D | undefined> => createDecoder({
+export const lazy = <D>(decoder: () => Decoder<D>): Decoder<D> => createDecoder({
   forceDecode: (data) => {
-    return unknown.andThen($ => {
-      return decoder.forceDecode(data)
-    }).forceDecode(data)
+    return decoder().forceDecode(data)
   }
 })
