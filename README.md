@@ -83,6 +83,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [`D.record`](#drecord)
   - [`D.keyValuePairs`](#dkeyvaluepairs)
   - [`D.object`](#dobject)
+  - [`D.recursive`](#drecursive)
 - [_Decoder_`.andThen` & chaining](#decoderandthen--chaining)
 
 ### Methods
@@ -142,7 +143,7 @@ if (decoder.is(data)) {
 
 #### _Decoder_`.validate`
 
-This method returns a discriminated union based on whether the decoder would fail or pass. It is useful to pattern match on the decoder result, getting the data or error without using a try catch clause. 
+This method returns a discriminated union based on whether the decoder would fail or pass. It is useful to pattern match on the decoder result, getting the data or error without using a try catch clause.
 
 ```ts
 D.string.validate('a string') // { type: 'ok', data: 'somestringvalue' }
@@ -305,7 +306,7 @@ The key-value pairs decoder works the same way as [`D.record`](#drecord) but ret
 
 ```ts
 // e.g. with data from previous example
-D.keyValuePairs(D.number).decode(data) // succeeds with data as '[[string, number]]'
+D.keyValuePairs(D.number).forceDecode(data) // succeeds with data as '[[string, number]]'
 ```
 
 #### `D.object`
@@ -328,7 +329,7 @@ const personDecoder = D.object({
   }
 })
 
-personDecoder.decode(person) // succeeds
+personDecoder.forceDecode(person) // succeeds
 ```
 
 You pass it an object which has `required` and `optional` object with specified fields. Both `required` and `optional` are optional so if you don't have any optional field you can just omit the `optional` field and vice versa.
@@ -346,6 +347,83 @@ interface Person {
   age: number
   preferredName?: string
 }
+```
+
+#### `D.recursive`
+
+This one allows you to decode recursive types. However, due to the limitations of TypeScript's type system, we can't have type inference and have to write interfaces to decode to manually.
+
+```ts
+// We have to define the type manually beforehand
+// Let's say that we have a user and they have a first name, last name, and a couple of friends
+type User = [string, string, User[]]
+
+// Then, we can create the decoder
+const userDecoder = D.tuple(D.string, D.string, D.array(D.recursive(() => userDecoder)))
+// This is equivalent
+const userDecoder = D.tuple(D.string, D.string, D.recursive(() => D.array(userDecoder)))
+// This too is equivalent
+const userDecoder = D.recursive(() => D.tuple(D.string, D.string, D.array(userDecoder)))
+
+// And the use it the way you're used to
+const bradPitt: User = [
+  'Brad',
+  'Pitt',
+  [
+    [
+      'Johnny',
+      'Depp',
+      [
+        ['Al', 'Pacino', []]
+      ]
+    ],
+    ['Leonardo', 'DiCaprio', []]
+  ]
+]
+
+userDecoder.forceDecode(bradPitt) // succeeds with the recursive type User
+```
+
+```ts
+// Again, you have to define the interface first
+interface Category {
+  name: string,
+  subcategories: Category[]
+}
+
+// And then use `recursive` in the decoder
+const categoryDecoder: D.Decoder<Category> = D.object({
+  required: {
+    name: D.string,
+    subcategories: D.array(D.recursive(() => categoryDecoder))
+  }
+})
+
+// This works as well
+const categoryDecoder: D.Decoder<Category> = D.recursive(() =>
+  D.object({
+    required: {
+      name: D.string,
+      subcategories: D.array(categoryDecoder)
+    }
+  })
+)
+
+const categories = {
+  name: 'Electronics',
+  subcategories: [
+    {
+      name: 'Computers',
+      subcategories: [
+        { name: 'Desktops', subcategories: [] },
+        { name: 'Laptops', subcategories: [] }
+      ]
+    },
+    { name: 'Fridges', subcategories: [] }
+  ]
+}
+
+categoryDecoder.forceDecode(categories) // succeeds
 ```
 
 ### _Decoder_`.andThen` & chaining

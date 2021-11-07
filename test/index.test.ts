@@ -201,6 +201,64 @@ test('D.object fails when given null or undefined', () => {
   shouldFail(D.object({ optional: { foo: D.string } }), undefined)
 })
 
+// Recursive
+test('D.recursive succeeds when used correctly', () => {
+  // We need to specify the types beforehand
+  type User = [string, string, User[]]
+
+  const userDecoder: D.Decoder<User> =
+    D.tuple(D.string, D.string, D.array(D.recursive(() => userDecoder)))
+
+  const users: User = [
+    'Brad',
+    'Pitt',
+    [
+      ['Johnny', 'Depp', [['Al', 'Pacino', []]]],
+      ['Leonardo', 'DiCaprio', []]
+    ]
+  ]
+
+  shouldBe(userDecoder, users, users)
+
+  interface Category {
+    name: string,
+    subcategories: Category[]
+  }
+
+  const categoryDecoder: D.Decoder<Category> = D.object({
+    required: {
+      name: D.string,
+      subcategories: D.array(D.recursive(() => categoryDecoder))
+    }
+  })
+
+  const categoryDecoder_: D.Decoder<Category> = D.recursive(() =>
+    D.object({
+      required: {
+        name: D.string,
+        subcategories: D.array(categoryDecoder_)
+      }
+    })
+  )
+
+  const categories = {
+    name: 'Electronics',
+    subcategories: [
+      {
+        name: 'Computers',
+        subcategories: [
+          { name: 'Desktops', subcategories: [] },
+          { name: 'Laptops', subcategories: [] }
+        ]
+      },
+      { name: 'Fridges', subcategories: [] }
+    ]
+  }
+
+  shouldBe(categoryDecoder, categories, categories)
+  shouldBe(categoryDecoder_, categories, categories)
+})
+
 //
 // Methods
 //
