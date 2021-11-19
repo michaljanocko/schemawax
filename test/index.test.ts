@@ -118,6 +118,17 @@ test('D.literalUnion fails when given null or undefined', () => {
   shouldFail(D.literalUnion('a', 5), undefined)
 })
 
+// Regex
+test('D.regex succeeds when regex is satisfied', () => {
+  shouldBe(D.regex(/^[a-z]+$/), 'test', 'test')
+})
+
+test('D.regex fails when regex is not satisfied', () => {
+  shouldFail(D.regex(/^[a-z]+$/), 'TEST!')
+  shouldFail(D.regex(/^[a-z]+$/), null)
+  shouldFail(D.regex(/^[a-z]+$/), undefined)
+})
+
 // Array
 test('D.array succeeds when given an array of the correct type', () => {
   shouldBe(D.array(D.unknown), [], [])

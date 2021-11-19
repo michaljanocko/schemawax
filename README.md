@@ -76,6 +76,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [`D.boolean`](#dboolean)
   - [`D.literal`](#dliteral)
   - [`D.literalUnion`](#dliteralunion)
+  - [`D.regex`](#dregex)
 - [Combinators](#combinators)
   - [`D.oneOf`](#doneof)
   - [`D.tuple`](#dtuple)
@@ -222,6 +223,24 @@ decoder.decode('data') // 'data'
 decoder.decode('error') // 'error'
 
 decoder.decode('not in there') // null
+```
+
+#### `D.regex`
+
+`D.regex` checks if a given regular expression matches the data.
+(This is particularly useful when you want to transform the data afterwards. See [`andThen`](#decoderandthen--chaining))
+```ts
+const decoder = D.regex(/^\d+$/)
+
+decoder.decode('138') // '138'
+
+decoder.decode('Not nice') // null
+```
+
+With transformation afterwards:
+
+```ts
+decoder.decode('138').andThen(Number) // 138
 ```
 
 ### Combinators

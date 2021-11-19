@@ -142,6 +142,17 @@ export const oneOf = <D extends readonly any[]>(
 export const literalUnion = <D extends ReadonlyArray<string | number | boolean>>(...decoders: D): Decoder<D[number]> =>
   oneOf(...decoders.map(literal))
 
+export const regex = <D extends string>(regex: RegExp): Decoder<D> =>
+  createDecoder({
+    forceDecode: (data) => {
+      checkDefined(data)
+      if (!regex.test(data as D)) {
+        throw new DecoderError(`Data '${data as D}' does not satisfy the regex '${String(regex)}'.`)
+      }
+      return data as D
+    }
+  })
+
 //
 // Arrays
 //
