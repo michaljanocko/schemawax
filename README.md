@@ -227,8 +227,8 @@ decoder.decode('not in there') // null
 
 #### `D.regex`
 
-`D.regex` checks if a given regular expression matches the data.
-(This is particularly useful when you want to transform the data afterwards. See [`andThen`](#decoderandthen--chaining))
+`D.regex` checks if a given regular expression matches the data. (This is particularly useful when you want to transform the data afterwards. See [`andThen`](#decoderandthen--chaining))
+
 ```ts
 const decoder = D.regex(/^\d+$/)
 
