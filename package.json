@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "prepublish": "tsc"
+    "prepublish": "tsc && uglifyjs dist/index.js -o dist/index.js"
   },
   "devDependencies": {
     "@babel/core": "^7.14.0",
