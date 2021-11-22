@@ -20,7 +20,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - uses: actions/cache@v2
         with:
-          path: '**/node_modules'
+          path: "**/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
       - run: yarn install
       - run: yarn test
@@ -35,6 +35,7 @@ jobs:
         with:
           node-version: 14
           registry-url: https://registry.npmjs.org/
+      - run: yarn install
       - run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
