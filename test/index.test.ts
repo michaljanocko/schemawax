@@ -316,6 +316,7 @@ test('Decoder.is returns true for correct type', () => {
 test('Decoder.is returns false for wrong type', () => {
   expect(D.string.is(5)).toBe(false)
   expect(D.array(D.unknown).is({})).toBe(false)
+  expect(D.unknown.is({})).toBe(true)
 })
 
 // validate
