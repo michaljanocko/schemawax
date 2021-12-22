@@ -115,7 +115,7 @@ export const literal = <D extends string | number | boolean>(literal: D): Decode
     checkDefined(data)
     if (data !== literal) {
       throw new DecoderError(
-        `Data does not match the literal. Expected: '${literal as string}', actual: '${show(data)}'`
+        `Data does not match the literal. Expected: '${literal as string}', actual value: '${show(data)}'`
       )
     }
     return data as D
@@ -135,7 +135,7 @@ export const oneOf = <D extends readonly any[]>(
         }
       }
 
-      throw new DecoderError(`Could not match any of the decoders, not matched: \n${show(errors)}`)
+      throw new DecoderError(`None of the decoders worked:\n${show(errors)}`)
     }
   })
 
@@ -177,7 +177,7 @@ export const tuple = <D extends readonly unknown[]>(
       checkArrayType(data)
       if (decoders.length > data.length) {
         throw new DecoderError(
-          `Tuple missing elements. ${decoders.length} > ${data.length}`
+          `The tuple is not long enough. ${decoders.length} > ${data.length}`
         )
       }
 
