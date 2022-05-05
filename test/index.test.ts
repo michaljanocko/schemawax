@@ -340,3 +340,111 @@ test('Decoder.validate on invalid data returns error', () => {
 test('Decoder.validate on valid data returns ok', () => {
   expect(D.string.validate('hi')).toStrictEqual({ type: 'ok', data: 'hi' })
 })
+
+test('DecodeError path of tuple is correct', () => {
+  const result = D.tuple(D.string, D.string).validate(["h1", 2]);
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("1: This is not a string: 2")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of an array is correct', () => {
+  const result = D.array(D.string).validate(["h1", "h2", 3.14]);
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("2: This is not a string: 3.14")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of an object required key is correct', () => {
+  const result = D.object({required: {name: D.string}}).validate({name: 1});
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("name: This is not a string: 1")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of an object optional key is correct', () => {
+  const result = D.object({optional: {name: D.string}}).validate({name: 1});
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("name: This is not a string: 1")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of a record is correct', () => {
+  const result = D.record(D.object({required: {name: D.string}})).validate({"charles": {name: 1}});
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("charles.name: This is not a string: 1")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of a key value pair is correct', () => {
+  const result = D.keyValuePairs(D.object({required: {name: D.string}})).validate({"charles": {name: 1}});
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("charles.name: This is not a string: 1")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of a nested object is correct', () => {
+  const result = D.object({optional: {sub: D.object({required: {name: D.string}})}}).validate({sub:{name: 1}});
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("sub.name: This is not a string: 1")
+  } else {
+    fail("Expected error")
+  }
+})
+
+test('DecodeError path of a recursive type is correct', () => {
+
+  const categories: any = {
+    name: 'Electronics',
+    subcategories: [
+      {
+        name: 'Computers',
+        subcategories: [
+          { name: 'Desktops', subcategories: [] },
+          { name: 1, subcategories: [] }
+        ]
+      },
+      { name: 'Fridges', subcategories: [] }
+    ]
+  }
+
+  interface Category {
+    name: string,
+    subcategories: Category[]
+  }
+
+  const categoryDecoder: D.Decoder<Category> = D.object({
+    required: {
+      name: D.string,
+      subcategories: D.array(D.recursive(() => categoryDecoder))
+    }
+  })
+
+  const categoryDecoder_: D.Decoder<Category> = D.recursive(() =>
+    D.object({
+      required: {
+        name: D.string,
+        subcategories: D.array(categoryDecoder_)
+      }
+    })
+  )
+
+  const result = categoryDecoder_.validate(categories);
+  if (result.type === "error") {
+    expect(result.error.message).toStrictEqual("subcategories.0.subcategories.1.name: This is not a string: 1")
+  } else {
+    fail("Expected error")
+  }
+})
