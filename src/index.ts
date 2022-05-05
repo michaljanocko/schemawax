@@ -51,10 +51,30 @@ export const createDecoder = <D>(decoder: Decode<D>): Decoder<D> => ({
 })
 
 export class DecoderError extends SyntaxError {
-  constructor (message?: string) {
+  path: string[]
+  constructor (message?: string, path: string[] = []) {
     super(message)
     this.name = 'DecoderError'
+    this.path = path
     Object.setPrototypeOf(this, new.target.prototype)
+
+    if (this.path.length === 1) {
+      this.message = `${this.path[0]}: ${this.message}`
+    } else if (this.path.length > 1) {
+      this.message = `${this.path[0]}.${this.message}`
+    }
+  }
+}
+
+const forceDecodeWithPath = <T>(decoder: Decoder<T>, data: unknown, pathPart: string): T => {
+  try {
+    return decoder.forceDecode(data)
+  } catch (e) {
+    if (e instanceof DecoderError) {
+      throw new DecoderError(e.message, [pathPart, ...e.path])
+    } else {
+      throw e
+    }
   }
 }
 
@@ -170,7 +190,7 @@ export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => createDecoder({
   forceDecode: (data) => {
     checkDefined(data)
     checkArrayType(data)
-    return data.map(decoder.forceDecode)
+    return data.map((x: unknown, i) => forceDecodeWithPath(decoder, x, i.toString()))
   }
 })
 
@@ -187,7 +207,7 @@ export const tuple = <D extends readonly unknown[]>(
       }
 
       return decoders.map((decoder, index) =>
-        decoder.forceDecode(data[index])
+        forceDecodeWithPath(decoder, data[index], index.toString())
       ) as any as D
     }
   })
@@ -209,7 +229,7 @@ export const record = <D>(decoder: Decoder<D>): Decoder<Record<string, D>> => cr
     checkDefined(data)
     checkDictType(data)
     return Object.fromEntries(
-      Object.entries(data).map(([key, value]) => [key, decoder.forceDecode(value)])
+      Object.entries(data).map(([key, value]) => [key, forceDecodeWithPath(decoder, value, key)])
     )
   }
 })
@@ -236,7 +256,7 @@ const required = <D extends DecoderRecord>(
 
       for (const key in struct) {
         if (data[key] === undefined) throw new DecoderError(`Object missing required property '${key}'`)
-        parsed[key] = struct[key].forceDecode(data[key])
+        parsed[key] = forceDecodeWithPath(struct[key], data[key], key)
       }
 
       return parsed as ObjectType<D>
@@ -253,7 +273,7 @@ const partial = <D extends DecoderRecord>(
 
       for (const key in struct) {
         if (data[key] !== undefined) {
-          parsed[key] = struct[key].forceDecode(data[key])
+          parsed[key] = forceDecodeWithPath(struct[key], data[key], key)
         }
       }
 
