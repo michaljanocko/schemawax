@@ -1,6 +1,6 @@
 {
   "name": "schemawax",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Tiny typed data decoder",
   "homepage": "https://github.com/michaljanocko/schemawax",
   "repository": "git@github.com:michaljanocko/schemawax.git",
