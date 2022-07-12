@@ -81,6 +81,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [`D.oneOf`](#doneof)
   - [`D.tuple`](#dtuple)
   - [`D.array`](#darray)
+  - [`D.iterable`](#diterable)
   - [`D.record`](#drecord)
   - [`D.keyValuePairs`](#dkeyvaluepairs)
   - [`D.object`](#dobject)
@@ -291,6 +292,14 @@ The array decoder takes another decoder with which it tries to decode a whole JS
 D.array(D.number).decode([1, 2, 3]) // [1, 2, 3]
 
 D.array(D.number).decode([1, 2, 'not a number']) // null
+```
+
+#### `D.iterable`
+
+The iterable decoder is like the array decoder but accepts any iterable type, instead of just arrays:
+
+```
+D.iterable(D.number).decode(new Set([1, 2, 3])) // [1, 2, 3]
 ```
 
 #### `D.record`

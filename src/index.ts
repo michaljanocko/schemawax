@@ -185,6 +185,27 @@ export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => createDecoder({
   }
 })
 
+function readIterable (data: unknown): any[] {
+  if (typeof data !== 'object' || data === null) {
+    throw new DecoderError(`This is not an object: ${show(data)}`)
+  } else if (!(Symbol.iterator in data)) {
+    throw new DecoderError(`This object is not iterable: ${show(data)}`)
+  } else {
+    try {
+      return [...data as Iterable<any>]
+    } catch {
+      throw new DecoderError(`This object has an invalid iterator: ${show(data)}`)
+    }
+  }
+}
+
+export const iterable = <D>(decoder: Decoder<D>): Decoder<D[]> => createDecoder({
+  forceDecode: (data) => {
+    checkDefined(data)
+    return readIterable(data).map((x: unknown, i) => forceDecodeWithPath(decoder, x, i.toString()))
+  }
+})
+
 export const tuple = <D extends readonly unknown[]>(
   ...decoders: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<D> => createDecoder({

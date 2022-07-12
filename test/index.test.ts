@@ -142,10 +142,25 @@ test('D.array fails when given something that is not an array', () => {
   shouldFail(D.array(D.unknown), {})
   shouldFail(D.array(D.unknown), 5)
   shouldFail(D.array(D.unknown), 'test')
+  shouldFail(D.array(D.unknown), new Set())
 })
 test('D.array fails when given null or undefined', () => {
   shouldFail(D.array(D.unknown), undefined)
   shouldFail(D.array(D.unknown), null)
+})
+
+// Iterable
+test('D.iterable succeeds when given a set', () => {
+  shouldBe(D.iterable(D.unknown), new Set(), [])
+  shouldBe(D.iterable(D.number), new Set([1, 2, 3]), [1, 2, 3])
+})
+test('D.iterable fails when given a set of wrong types', () => {
+  shouldFail(D.iterable(D.number), new Set(['test', 'test']))
+  shouldFail(D.iterable(D.number), new Set([1, 2, 3, '']))
+})
+test('D.iterable fails when given null or undefined', () => {
+  shouldFail(D.iterable(D.unknown), undefined)
+  shouldFail(D.iterable(D.unknown), null)
 })
 
 // Tuple
