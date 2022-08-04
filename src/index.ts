@@ -97,6 +97,15 @@ export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => createDec
   forceDecode: (data) => data === null ? null : decoder.forceDecode(data)
 })
 
+/**
+ * A decoder that always return the same value. Useful for fallback values.
+ */
+export const succeed = <T> (value: T): Decoder<T> => createDecoder({
+  forceDecode: () => {
+    return value
+  }
+})
+
 const primitiveDecoder = <D>(
   dataType: string,
   condition: (data: unknown) => data is D
