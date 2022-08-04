@@ -73,6 +73,12 @@ test('D.nullable fails when given undefined', () => {
   shouldFail(D.nullable(D.string), undefined)
 })
 
+// Succeed
+test('D.succeed succeeds with the given value', () => {
+  shouldBe(D.succeed(5), null, 5)
+  shouldBe(D.oneOf(D.null, D.succeed("test")), NaN, 'test')
+})
+
 // Literal
 test('D.literal succeeds when given the correct type', () => {
   shouldBe(D.literal('test'), 'test', 'test')
