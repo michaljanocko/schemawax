@@ -65,7 +65,7 @@ test('D.nullable fails when given undefined', () => {
 // Succeed
 test('D.succeed succeeds with the given value', () => {
   shouldBe(D.succeed(5), null, 5)
-  shouldBe(D.oneOf(D.null, D.succeed("test")), NaN, 'test')
+  shouldBe(D.oneOf(D.string, D.succeed("test")), NaN, 'test')
 })
 
 // Literal
