@@ -73,9 +73,7 @@ export const checkDefined = (data: unknown): data is null | undefined => {
  * else, pass to the decoder where 'checkDefined'
  * fails only when data is undefined
  */
-export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => createDecoder({
-  forceDecode: (data) => data === null ? null : decoder.forceDecode(data)
-})
+export const nullable = <D> (decoder: Decoder<D>): Decoder<null | D> => oneOf(decoder, null_)
 
 const primitiveDecoder = <D>(
   dataType: string,
@@ -97,6 +95,17 @@ const primitiveDecoder = <D>(
 export const unknown = createDecoder({
   forceDecode: (data) => data
 })
+
+const null_ = createDecoder({
+  forceDecode: (data) => {
+    if (data === null) {
+      return data
+    } else {
+      throw new DecoderError('Provided value is not null.')
+    }
+  }
+})
+export { null_ as null }
 
 export const string = primitiveDecoder<string>(
   'a string', ($): $ is string => typeof $ === 'string'
