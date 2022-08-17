@@ -101,9 +101,7 @@ export const nullable = <D>(decoder: Decoder<D>): Decoder<null | D> => createDec
  * A decoder that always return the same value. Useful for fallback values.
  */
 export const succeed = <T> (value: T): Decoder<T> => createDecoder({
-  forceDecode: () => {
-    return value
-  }
+  forceDecode: () => value
 })
 
 const primitiveDecoder = <D>(
