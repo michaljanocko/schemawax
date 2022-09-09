@@ -241,8 +241,8 @@ export const keyValuePairs = <D>(decoder: Decoder<D>): Decoder<Array<[string, D]
 //
 
 export type DecoderRecord = Record<PropertyKey, Decoder<any>>
-type OmitEmptyPartial<T extends DecoderRecord> = T extends infer U & Partial<{ [x: string]: any }> ? U : never
-type ObjectType<D extends DecoderRecord> = D extends { [K in keyof infer U]: Decoder<(infer U)[K]> } ? U : never
+type OmitEmptyPartial<D extends DecoderRecord> = { [K in keyof D]: Exclude<D[K], undefined> }
+type ObjectType<D extends DecoderRecord> = { [K in keyof D]: Output<D[K]> }
 
 const required = <D extends DecoderRecord>(
   struct: D
