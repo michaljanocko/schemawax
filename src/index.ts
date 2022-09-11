@@ -96,7 +96,8 @@ export const checkDefined = (data: unknown): data is null | undefined => {
 export const nullable = <D> (decoder: Decoder<D>): Decoder<null | D> => oneOf(decoder, null_)
 
 /**
- * A decoder that always return the same value. Useful for fallback values.
+ * A decoder that always return the same value
+ * Useful for fallback values
  */
 export const succeed = <T> (value: T): Decoder<T> => createDecoder({
   forceDecode: () => value
