@@ -38,6 +38,17 @@ const primitiveTest = <T>(
   })
 }
 
+// Null
+test(`D.null succeeds when given a null`, () => {
+  shouldBe(D.null, null, null);
+})
+test(`D.null fails when given a wrong type`, () => {
+  shouldFail(D.null, 1);
+  shouldFail(D.null, "1");
+  shouldFail(D.null, undefined);
+  shouldFail(D.null, NaN);
+});
+
 // String
 primitiveTest('D.string', D.string, {
   success: ['test', ''], failure: [5, true]
