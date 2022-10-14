@@ -103,6 +103,15 @@ export const succeed = <T> (value: T): Decoder<T> => createDecoder({
   forceDecode: () => value
 })
 
+/**
+ * A decoder that always fails. Useful for overriding existing decoders.
+ */
+export const never: Decoder<never> = createDecoder({
+  forceDecode: () => {
+    throw new DecoderError('This field must never be present')
+  }
+})
+
 const primitiveDecoder = <D>(
   dataType: string,
   condition: (data: unknown) => data is D
