@@ -77,6 +77,7 @@ You can either delve into the documentation (highly recommended) or check out so
   - [`D.literal`](#dliteral)
   - [`D.literalUnion`](#dliteralunion)
   - [`D.regex`](#dregex)
+  - 
 - [Combinators](#combinators)
   - [`D.oneOf`](#doneof)
   - [`D.tuple`](#dtuple)
@@ -241,6 +242,28 @@ With transformation afterwards:
 
 ```ts
 decoder.decode('138').andThen(Number) // 138
+```
+
+#### `D.nullable`
+
+If you wrap a decoder in `D.nullable`, then it wither decodes to its supposed type or falls back to `null`.
+
+```ts
+const decoder = D.nullable(D.string)
+
+decoder.forceDecoder('hello') // 'hello'
+decoder.forceDecoder(null) // null
+
+decoder.forceDecoder(15) // throws DecoderError
+```
+
+#### `D.succeed`
+
+This decoder always succesfully decodes to the value provided.
+
+```ts
+D.succeed(true).decode('unnecessary string') // true
+D.succeed(1234).decode({}) // 1234
 ```
 
 ### Combinators
