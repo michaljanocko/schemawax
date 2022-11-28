@@ -211,6 +211,8 @@ export const array = <D>(decoder: Decoder<D>): Decoder<D[]> => createDecoder({
   }
 })
 
+export const readonlyArray = <D>(decoder: Decoder<D>): Decoder<ReadonlyArray<D>> => array(decoder)
+
 export const tuple = <D extends readonly unknown[]>(
   ...decoders: { [K in keyof D]: Decoder<D[K]> }
 ): Decoder<D> => createDecoder({
